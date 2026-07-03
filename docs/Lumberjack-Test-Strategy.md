@@ -1,7 +1,10 @@
 # Test Strategy: Lumberjack
 
 **Project:** Lumberjack (Actor Framework logging library for LabVIEW)
-**Companion documents:** Lumberjack SRS (SRS-LMBR-001 .. 064), SDD, API and Usage Guide, Message and Class Reference
+
+**Companion documents:** Lumberjack SRS (SRS-LMBR-001 .. 064), SDD, API and
+Usage Guide, Message and Class Reference
+
 **Status:** Draft
 
 ---
@@ -10,17 +13,25 @@
 
 ### 1.1 Purpose
 
-This document defines how Lumberjack is verified: the test framework, the tiers of tests, the seams the design exposes for testing, and a requirement-traceable inventory of test cases. It is modeled on the predecessor Logger's test project and extends it to cover Lumberjack's broader behavior.
+This document defines how Lumberjack is verified: the test framework, the tiers
+of tests, the seams the design exposes for testing, and a requirement-traceable
+inventory of test cases. It is modeled on the predecessor Logger's test project
+and extends it to cover Lumberjack's broader behavior.
 
 ### 1.2 Scope
 
-Verification of the runtime library against the SRS. Build and packaging scripts are out of scope except that the test suite must run from the project (as Logger's did). This is a non-regulated project, so the intent is engineering confidence and regression safety, not a formal V&V record; nonetheless tests are traced to requirements so coverage gaps are visible.
+Verification of the runtime library against the SRS. Build and packaging scripts
+are out of scope except that the test suite must run from the project (as
+Logger's did). This is a non-regulated project, so the intent is engineering
+confidence and regression safety, not a formal V&V record; nonetheless tests are
+traced to requirements so coverage gaps are visible.
 
 ---
 
 ## 2. Review of the predecessor's coverage
 
-Logger's tests use Caraya (`Assert Equal`, `Assert Not Error`) with a temporary-folder setup/teardown fixture.
+Logger's tests use Caraya (`Assert Equal`, `Assert Not Error`) with a
+temporary-folder setup/teardown fixture.
 
 | Logger test VI | Exercises |
 |---|---|
@@ -32,9 +43,15 @@ Logger's tests use Caraya (`Assert Equal`, `Assert Not Error`) with a temporary-
 | Support/After File Logging | fixture: clear errors |
 | Toolkit.vi | Caraya suite aggregator |
 
-Logger's coverage is narrow and formatting-centric. Untested, even for Logger's own features: level/threshold filtering, broadcast to multiple listeners, `Read Listener` consumption, file rollover by size, retention/pruning by count, calendar folder tree, ISO 8601 naming, verbosity and Catch Error, and buffer/Maximum Messages behavior.
+Logger's coverage is narrow and formatting-centric. Untested, even for Logger's
+own features: level/threshold filtering, broadcast to multiple listeners,
+`Read Listener` consumption, file rollover by size, retention/pruning by count,
+calendar folder tree, ISO 8601 naming, verbosity and Catch Error, and
+buffer/Maximum Messages behavior.
 
-Two things are worth carrying forward: Caraya as the framework (continuity, and it is a test-only dependency that ships with nothing, per SRS DEP-1), and the temporary-folder fixture that keeps file tests isolated and repeatable.
+Two things are worth carrying forward: Caraya as the framework (continuity, and
+it is a test-only dependency that ships with nothing, per SRS DEP-1), and the
+temporary-folder fixture that keeps file tests isolated and repeatable.
 
 ---
 
@@ -42,37 +59,69 @@ Two things are worth carrying forward: Caraya as the framework (continuity, and 
 
 ### 3.1 Framework
 
-Caraya is retained. It matches Logger, and it stays test-only (not a runtime dependency, SRS-LMBR-061, DEP-1). The native LabVIEW Unit Test Framework is a viable alternative if the JKI dependency is to be dropped from the test tier as well; the strategy below is framework-neutral and would port.
+Caraya is retained. It matches Logger, and it stays test-only (not a runtime
+dependency, SRS-LMBR-061, DEP-1). The native LabVIEW Unit Test Framework is a
+viable alternative if the JKI dependency is to be dropped from the test tier as
+well; the strategy below is framework-neutral and would port.
 
 ### 3.2 Two tiers
 
-- **Unit tier (pure VIs, no actors).** Fast, deterministic, no launched actors and no real I/O beyond a temp folder. This tier carries the bulk of coverage because the design pushed decision logic (filtering, formatting, config resolution, path resolution, retention) into pure VIs rather than into actor loops.
-- **Integration tier (launched actors).** Launches a Log Manager with a capture appender, drives log calls, and asserts on delivered content. Used only where behavior is genuinely emergent from the actor topology (broadcast, register/unregister, flush-on-shutdown, relay delivery).
+- **Unit tier (pure VIs, no actors).** Fast, deterministic, no launched actors
+  and no real I/O beyond a temp folder. This tier carries the bulk of coverage
+  because the design pushed decision logic (filtering, formatting, config
+  resolution, path resolution, retention) into pure VIs rather than into actor
+  loops.
+- **Integration tier (launched actors).** Launches a Log Manager with a capture
+  appender, drives log calls, and asserts on delivered content. Used only where
+  behavior is genuinely emergent from the actor topology (broadcast,
+  register/unregister, flush-on-shutdown, relay delivery).
 
 ### 3.3 Test seams the design exposes
 
-- **Pure VIs.** `Layout.Format`, `Filter` matching, config resolve/merge/validate, tag defaulting and dot-sanitization, severity rank comparison, ISO 8601 filename building, retention/prune selection, and drop-policy selection are all callable directly with no actor context. The CSV `Layout.Format` test is the direct descendant of Logger's Create Statement Line test.
-- **Capture probe.** The relay appender in queue mode is a ready-made test probe: register it, drive log calls, then Dequeue or Flush its queue and assert exactly what was delivered, in what order, after which filters. A small dedicated Capture Appender test double is an alternative if a purpose-built probe is preferred.
-- **Injectable Layout and Filter.** Because both are supplied to an appender at creation, a test can inject a trivial identity layout or a known filter to remove formatting and selection variance from an assertion.
+- **Pure VIs.** `Layout.Format`, `Filter` matching, config
+  resolve/merge/validate, tag defaulting and dot-sanitization, severity rank
+  comparison, ISO 8601 filename building, retention/prune selection, and
+  drop-policy selection are all callable directly with no actor context. The CSV
+  `Layout.Format` test is the direct descendant of Logger's Create Statement
+  Line test.
+- **Capture probe.** The relay appender in queue mode is a ready-made test
+  probe: register it, drive log calls, then Dequeue or Flush its queue and
+  assert exactly what was delivered, in what order, after which filters. A small
+  dedicated Capture Appender test double is an alternative if a purpose-built
+  probe is preferred.
+- **Injectable Layout and Filter.** Because both are supplied to an appender at
+  creation, a test can inject a trivial identity layout or a known filter to
+  remove formatting and selection variance from an assertion.
 
 ### 3.4 Fixtures
 
-- **Temp root fixture** (SetUp/TearDown): create a unique temporary root folder before file tests and delete it after, so file appenders never touch shared locations and runs are repeatable. This generalizes Logger's Before/After File Logging.
-- **Manager fixture:** launch a Log Manager with the default file disabled and exactly the appenders a test needs, then shut it down in TearDown, asserting a clean flush.
+- **Temp root fixture** (SetUp/TearDown): create a unique temporary root folder
+  before file tests and delete it after, so file appenders never touch shared
+  locations and runs are repeatable. This generalizes Logger's Before/After File
+  Logging.
+- **Manager fixture:** launch a Log Manager with the default file disabled and
+  exactly the appenders a test needs, then shut it down in TearDown, asserting a
+  clean flush.
 
 ### 3.5 Determinism rule
 
-Enqueue-to-delivery latency is explicitly non-deterministic (SRS-LMBR-053). Therefore:
+Enqueue-to-delivery latency is explicitly non-deterministic (SRS-LMBR-053).
+Therefore:
 
-- No test asserts on timing, latency, or delivery order across different appenders.
-- Integration tests drain-then-assert: shut down (or flush) so all queued statements are processed, then assert on the eventual delivered content.
-- Concurrency and backpressure-under-load are verified by testing the drop-policy selection as a pure VI (deterministic) and asserting the synthetic drop-notice record appears, rather than by racing producer threads.
+- No test asserts on timing, latency, or delivery order across different
+  appenders.
+- Integration tests drain-then-assert: shut down (or flush) so all queued
+  statements are processed, then assert on the eventual delivered content.
+- Concurrency and backpressure-under-load are verified by testing the
+  drop-policy selection as a pure VI (deterministic) and asserting the synthetic
+  drop-notice record appears, rather than by racing producer threads.
 
 ---
 
 ## 4. Test inventory
 
-Tier is U (unit) or I (integration). Each case lists the assertion intent and the requirements it covers.
+Tier is U (unit) or I (integration). Each case lists the assertion intent and
+the requirements it covers.
 
 ### 4.1 Statement and layout
 
@@ -178,9 +227,14 @@ Tier is U (unit) or I (integration). Each case lists the assertion intent and th
 ## 5. Deliberately not unit-tested
 
 - **Timing and latency:** excluded by the determinism rule (SRS-LMBR-053).
-- **Cross-appender ordering:** not guaranteed once queues drain concurrently (SRS-LMBR-054); tests assert per-appender order only.
-- **True concurrent-overload races:** approximated by pure drop-policy tests plus the drop-notice assertion, rather than by nondeterministic thread races.
-- **Real disk-full / permission failures:** the config-vs-resource boundary (SRS-LMBR-049) is asserted by construction (invalid resource surfaces as the appender's launch error), with at most one opt-in test using a deliberately unwritable path.
+- **Cross-appender ordering:** not guaranteed once queues drain concurrently
+  (SRS-LMBR-054); tests assert per-appender order only.
+- **True concurrent-overload races:** approximated by pure drop-policy tests
+  plus the drop-notice assertion, rather than by nondeterministic thread races.
+- **Real disk-full / permission failures:** the config-vs-resource boundary
+  (SRS-LMBR-049) is asserted by construction (invalid resource surfaces as the
+  appender's launch error), with at most one opt-in test using a deliberately
+  unwritable path.
 
 ---
 
@@ -208,10 +262,20 @@ tests/
     Capture appender probe.vi
 ```
 
-A `Test.vi` runner (as in Logger's Scripts library) executes the full suite. Unit tests run without launching the framework; integration tests use the manager and temp-root fixtures and always tear down with a clean shutdown assertion.
+A `Test.vi` runner (as in Logger's Scripts library) executes the full suite.
+Unit tests run without launching the framework; integration tests use the
+manager and temp-root fixtures and always tear down with a clean shutdown
+assertion.
 
 ---
 
 ## 7. Coverage summary
 
-The strategy touches every requirement group in the SRS. Notably, the majority of behavior lands in the deterministic unit tier because filtering, formatting, configuration, retention, and path resolution were designed as pure VIs. The integration tier is reserved for the genuinely emergent behaviors of the actor topology: broadcast, runtime register/unregister, relay delivery, file rollover, and flush-on-shutdown. This is a substantial expansion over Logger's formatting-centric suite while keeping the fast, repeatable core that Logger established.
+The strategy touches every requirement group in the SRS. Notably, the majority
+of behavior lands in the deterministic unit tier because filtering, formatting,
+configuration, retention, and path resolution were designed as pure VIs. The
+integration tier is reserved for the genuinely emergent behaviors of the actor
+topology: broadcast, runtime register/unregister, relay delivery, file rollover,
+and flush-on-shutdown. This is a substantial expansion over Logger's
+formatting-centric suite while keeping the fast, repeatable core that Logger
+established.

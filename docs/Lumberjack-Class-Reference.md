@@ -1,29 +1,40 @@
 # Message and Class Reference: Lumberjack
 
 **Project:** Lumberjack (Actor Framework logging library for LabVIEW)
-**Companion documents:** Lumberjack SRS (SRS-LMBR-001 .. 064), Lumberjack SDD, Lumberjack API and Usage Guide
+
+**Companion documents:** Lumberjack SRS (SRS-LMBR-001 .. 064), Lumberjack SDD,
+Lumberjack API and Usage Guide
+
 **Status:** Draft
 
 ---
 
 ## 1. About this reference
 
-This document lists every type definition, class, and message in Lumberjack, with private data, member VIs, scopes, and dynamic-dispatch status. It is the implementation-facing companion to the SDD.
+This document lists every type definition, class, and message in Lumberjack,
+with private data, member VIs, scopes, and dynamic-dispatch status. It is the
+implementation-facing companion to the SDD.
 
 Notation:
 
-- **Scope**: `public`, `community`, `protected`, `private` (LabVIEW member access scopes).
-- **Dispatch**: `static` (normal) or **DD** (dynamic dispatch). *(must override)* marks an abstract DD member a subclass is required to implement; *(override)* marks a member that overrides a parent.
+- **Scope**: `public`, `community`, `protected`, `private` (LabVIEW member
+  access scopes).
+- **Dispatch**: `static` (normal) or **DD** (dynamic dispatch). *(must
+  override)* marks an abstract DD member a subclass is required to implement;
+  *(override)* marks a member that overrides a parent.
 - Severity ranks are fixed: FATAL 1, ERROR 2, WARN 3, INFO 4, DEBUG 5, TRACE 6.
 
 ---
 
 ## 2. Type definitions (data)
 
-These are typedef controls, not classes. They cross the API boundary and the JSON boundary, so they are plain data.
+These are typedef controls, not classes. They cross the API boundary and the
+JSON boundary, so they are plain data.
 
 ### 2.1 Severity (enum)
-Values, in rank order: `FATAL (1)`, `ERROR (2)`, `WARN (3)`, `INFO (4)`, `DEBUG (5)`, `TRACE (6)`. The numeric rank is used for threshold comparison (SRS-LMBR-005, 006).
+Values, in rank order: `FATAL (1)`, `ERROR (2)`, `WARN (3)`, `INFO (4)`,
+`DEBUG (5)`, `TRACE (6)`. The numeric rank is used for threshold comparison
+(SRS-LMBR-005, 006).
 
 ### 2.2 Statement (cluster)
 One log record (SRS-LMBR-010).
@@ -52,7 +63,8 @@ Per-appender selection filter (SRS-LMBR-026, 027).
 `message` (default), `queue` (SRS-LMBR-024, 025).
 
 ### 2.6 Appender Config (cluster, common)
-The common configuration shared by every appender (SRS-LMBR-029). Composed (nested) into each type-specific config.
+The common configuration shared by every appender (SRS-LMBR-029). Composed
+(nested) into each type-specific config.
 
 | Field | Type | Notes |
 |---|---|---|
@@ -64,10 +76,14 @@ The common configuration shared by every appender (SRS-LMBR-029). Composed (nest
 | layout | Layout | formatting strategy (SRS-LMBR-015) |
 
 ### 2.7 File Appender Config (cluster)
-`Appender Config` (nested as `common`) plus: `root folder` (Path), `max file size` (U64), `max file count` (U32, 0 = keep all), `extension` (String), `delimiter` (String), `calendar folder tree?` (Bool) (SRS-LMBR-030, 032-040).
+`Appender Config` (nested as `common`) plus: `root folder` (Path),
+`max file size` (U64), `max file count` (U32, 0 = keep all), `extension`
+(String), `delimiter` (String), `calendar folder tree?` (Bool) (SRS-LMBR-030,
+032-040).
 
 ### 2.8 Relay Appender Config (cluster)
-`Appender Config` plus: `mode` (Relay Mode) and, for message mode, `consumer enqueuer` (Enqueuer).
+`Appender Config` plus: `mode` (Relay Mode) and, for message mode,
+`consumer enqueuer` (Enqueuer).
 
 ### 2.9 Lumberjack Config (cluster)
 The `Initialize` / JSON boundary object (SRS-LMBR-050).
@@ -91,10 +107,12 @@ The Notifier payload broadcast to callers (SDD 2.1).
 ## 3. Classes
 
 ### 3.1 Logger.lvclass
-By-value caller facade. Wraps the shared references and provides the public API. Not an actor.
+By-value caller facade. Wraps the shared references and provides the public API.
+Not an actor.
 
 - **Inherits:** LabVIEW Object.
-- **Private data:** `notifier` (Notifier refnum for the Snapshot), `manager enqueuer` (Enqueuer to the Log Manager).
+- **Private data:** `notifier` (Notifier refnum for the Snapshot),
+  `manager enqueuer` (Enqueuer to the Log Manager).
 
 | Member | Scope | Dispatch | Description |
 |---|---|---|---|
@@ -114,7 +132,9 @@ By-value caller facade. Wraps the shared references and provides the public API.
 Root actor; owns the control plane and is the sole poster of the Snapshot.
 
 - **Inherits:** Actor.lvclass.
-- **Private data:** `notifier` (Snapshot Notifier), `registry` (array of {id, Enqueuer, Appender-nested-actor handle}), `global threshold`, resolved `Lumberjack Config`.
+- **Private data:** `notifier` (Snapshot Notifier), `registry` (array of {id,
+  Enqueuer, Appender-nested-actor handle}), `global threshold`, resolved
+  `Lumberjack Config`.
 
 | Member | Scope | Dispatch | Description |
 |---|---|---|---|
@@ -125,10 +145,12 @@ Root actor; owns the control plane and is the sole poster of the Snapshot.
 | Handle Stop | protected | override | Stop all nested appenders (each flushes and closes), then stop (SRS-LMBR-002, 004). |
 
 ### 3.3 Appender.lvclass (abstract)
-Base actor for all sinks. Implements the shared receipt logic; delegates sink specifics to subclasses (SRS-LMBR-018).
+Base actor for all sinks. Implements the shared receipt logic; delegates sink
+specifics to subclasses (SRS-LMBR-018).
 
 - **Inherits:** Actor.lvclass.
-- **Private data:** `Appender Config` (common fields), `dropped count` (U64), plus an internal bounded intake buffer when `queue bound > 0`.
+- **Private data:** `Appender Config` (common fields), `dropped count` (U64),
+  plus an internal bounded intake buffer when `queue bound > 0`.
 
 | Member | Scope | Dispatch | Description |
 |---|---|---|---|
@@ -146,7 +168,8 @@ Base actor for all sinks. Implements the shared receipt logic; delegates sink sp
 Writes statements to rolling, retained log files.
 
 - **Inherits:** Appender.lvclass.
-- **Private data:** `File Appender Config` fields, current file refnum, current file size, current folder.
+- **Private data:** `File Appender Config` fields, current file refnum, current
+  file size, current folder.
 
 | Member | Scope | Dispatch | Description |
 |---|---|---|---|
@@ -175,7 +198,8 @@ Writes formatted lines to the console/standard output.
 Delivers accepted statements to the application (SRS-LMBR-023).
 
 - **Inherits:** Appender.lvclass.
-- **Private data:** `mode` (Relay Mode), `consumer enqueuer` (message mode), owned `relay queue` refnum (queue mode).
+- **Private data:** `mode` (Relay Mode), `consumer enqueuer` (message mode),
+  owned `relay queue` refnum (queue mode).
 
 | Member | Scope | Dispatch | Description |
 |---|---|---|---|
@@ -196,7 +220,8 @@ Stateless formatting strategy (SRS-LMBR-015). By-value, not an actor.
 
 ### 3.8 CSV Layout.lvclass
 - **Inherits:** Layout.lvclass. **Private data:** `delimiter`.
-- `Format` *(override)*: emit `timestamp, level, source tag, origin VI, message` with RFC 4180 quoting (SDD 5.4). Default layout (SRS-LMBR-012).
+- `Format` *(override)*: emit `timestamp, level, source tag, origin VI, message`
+  with RFC 4180 quoting (SDD 5.4). Default layout (SRS-LMBR-012).
 
 ### 3.9 JSON Layout.lvclass
 - **Inherits:** Layout.lvclass.
@@ -210,22 +235,26 @@ Stateless formatting strategy (SRS-LMBR-015). By-value, not an actor.
 
 ## 4. Messages
 
-All extend `Message.lvclass` and override `Do.vi`. Each has an auto-generated `Send <name>.vi` convenience method. Payload is the message's private data.
+All extend `Message.lvclass` and override `Do.vi`. Each has an auto-generated
+`Send <name>.vi` convenience method. Payload is the message's private data.
 
 ### 4.1 Log Statement Msg (data plane)
 - **Direction:** caller (via `Logger.Log`) to each appender enqueuer.
 - **Payload:** `Statement`.
-- **Do.vi:** call the receiving `Appender`'s `Handle Statement` (threshold, filter, format, write) (SRS-LMBR-019).
+- **Do.vi:** call the receiving `Appender`'s `Handle Statement` (threshold,
+  filter, format, write) (SRS-LMBR-019).
 
 ### 4.2 Register Appender Msg (control plane)
 - **Direction:** caller to Log Manager.
 - **Payload:** a constructed, pre-configured `Appender` object.
-- **Do.vi:** `Launch Appender`, add to registry, `Post Snapshot` (SRS-LMBR-020, 028).
+- **Do.vi:** `Launch Appender`, add to registry, `Post Snapshot` (SRS-LMBR-020,
+  028).
 
 ### 4.3 Unregister Appender Msg (control plane)
 - **Direction:** caller to Log Manager.
 - **Payload:** appender `id` (String).
-- **Do.vi:** post an updated Snapshot without that enqueuer, then send framework Stop to the appender and remove it from the registry (SDD 5.8).
+- **Do.vi:** post an updated Snapshot without that enqueuer, then send framework
+  Stop to the appender and remove it from the registry (SDD 5.8).
 
 ### 4.4 Set Global Threshold Msg (control plane)
 - **Direction:** caller to Log Manager.
@@ -235,15 +264,19 @@ All extend `Message.lvclass` and override `Do.vi`. Each has an auto-generated `S
 ### 4.5 Configure Appender Msg (control plane)
 - **Direction:** caller to Log Manager to a specific appender.
 - **Payload:** target `id` (String) plus a `config delta`.
-- **Do.vi (manager):** look up the target enqueuer and forward a `Configure Msg` (SRS-LMBR-043).
+- **Do.vi (manager):** look up the target enqueuer and forward a `Configure Msg`
+  (SRS-LMBR-043).
 
 ### 4.6 Configure Msg (manager to appender)
 - **Direction:** Log Manager to one appender.
 - **Payload:** `config delta`.
-- **Do.vi:** call the appender's `Configure` (base plus any subclass override), effective for statements dequeued after (SDD 5.9).
+- **Do.vi:** call the appender's `Configure` (base plus any subclass override),
+  effective for statements dequeued after (SDD 5.9).
 
 ### 4.7 Stop (framework)
-The Actor Framework `Stop Msg` is used unchanged. On the Log Manager it triggers `Handle Stop` (stop all appenders); on an appender it triggers `Close Sink` via the `Actor Core` exit path (SRS-LMBR-002, 004).
+The Actor Framework `Stop Msg` is used unchanged. On the Log Manager it triggers
+`Handle Stop` (stop all appenders); on an appender it triggers `Close Sink` via
+the `Actor Core` exit path (SRS-LMBR-002, 004).
 
 ---
 
