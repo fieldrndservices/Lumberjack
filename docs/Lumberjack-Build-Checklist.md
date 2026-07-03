@@ -26,21 +26,21 @@ or the reason for the position.
 - [x] 2. `Severity` enum. (No dependencies; referenced by nearly everything, so
       first.)
 - [x] 3. `DropPolicy`, `RelayMode`, `FilterMode` enums. (Standalone.)
-- [ ] 4. `Statement` cluster. (Severity.)
-- [ ] 5. `Filter` cluster. (Severity, FilterMode.)
+- [x] 4. `Statement` cluster. (Severity.)
+- [x] 5. `Filter` cluster. (Severity, FilterMode.)
 
 ## Phase 2 - Layout
 
-- [ ] 6. `Layout.lvclass` abstract, with `Format` (DD). (Statement.)
-- [ ] 7. `CSVLayout`, `JSONLayout`, `TextLayout`, each overriding `Format`.
+- [x] 6. `Layout.lvclass` abstract, with `Format` (DD). (Statement.)
+- [x] 7. `CSVLayout`, `JSONLayout`, `TextLayout`, each overriding `Format`.
       (Layout, Statement.)
 
 ## Phase 3 - Config typedefs
 
-- [ ] 8. `AppenderConfig`. (Severity, Filter, DropPolicy, Layout.)
-- [ ] 9. `FileAppenderConfig`, `RelayAppenderConfig`. (AppenderConfig; plus
+- [x] 8. `AppenderConfig`. (Severity, Filter, DropPolicy, Layout.)
+- [x] 9. `FileAppenderConfig`, `RelayAppenderConfig`. (AppenderConfig; plus
       RelayMode and Enqueuer for the relay.)
-- [ ] 10. `LumberjackConfig`. (Severity, FileAppenderConfig.)
+- [x] 10. `LumberjackConfig`. (Severity, FileAppenderConfig.)
 - [ ] 11. `Snapshot`. (Severity, Enqueuer.)
 
 ## Phase 4 - Pure support VIs

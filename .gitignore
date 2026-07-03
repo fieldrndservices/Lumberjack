@@ -3,6 +3,7 @@
 .cache/
 *.aliases
 *.lvlps
+*.UserState
 
 # --- Build outputs (regenerable, not committed) ---
 /builds/

@@ -45,7 +45,7 @@ wired uses the instance.
 ### 1.2 Naming and migration
 
 Verbs mirror the original Logger (`Initialize`, `Trace`..`Fatal`, `Shutdown`,
-`Catch Error`), modernized where it improves clarity. The main modernizations:
+`CatchError`), modernized where it improves clarity. The main modernizations:
 listeners are now **appenders**; the global `Configure` file settings are now
 **per-appender** configuration set when you create an appender. A full mapping
 is in section 11.
@@ -69,6 +69,8 @@ Log to the default file with three nodes:
                   [Error "Valve timeout"]
 ```
 
+@TODO - Include a VI snippet/PNG when available
+
 That is the entire minimum. Everything else is optional configuration and
 additional appenders.
 
@@ -78,14 +80,14 @@ additional appenders.
 
 ### 3.1 Initialize
 
-Starts the Log Manager, resolves configuration, launches the default file
+Starts the LogManager, resolves configuration, launches the default file
 appender, and posts the initial snapshot. Establishes the process-default logger
 and returns an instance.
 
 - **Inputs:**
   - `global threshold` *(opt, default INFO=4)*: stage-1 coarse threshold
     (SRS-LMBR-007, 012).
-  - `default file config` *(opt)*: a File Appender config for the default file
+  - `default file config` *(opt)*: a FileAppender config for the default file
     (root folder, max size, max count, extension, delimiter, calendar tree).
     Defaults give a CSV file with calendar folders and size-based rollover.
   - `disable default file?` *(opt, default FALSE)*: when TRUE, no default file
@@ -102,7 +104,7 @@ and returns an instance.
 
 ### 3.2 Shutdown
 
-Stops the Log Manager, which flushes and closes every appender.
+Stops the LogManager, which flushes and closes every appender.
 
 - **Inputs:** `logger in` *(opt)*.
 - **Behavior:** runs its flush-and-close even if `error in` carries an error
@@ -123,8 +125,8 @@ the same pane.
     (SRS-LMBR-013, 017).
   - `logger in` *(opt)*.
 - **Behavior:** reads the current snapshot, applies the global threshold
-  locally, and if the statement passes, builds it (timestamp, level, source tag,
-  origin VI, message) and fans it out to every registered appender. Returns
+  locally, and if the statement passes, builds it (timestamp, level, sourceTag,
+  originVI, message) and fans it out to every registered appender. Returns
   without waiting for any sink I/O (SRS-LMBR-052). The statement is created even
   if `error in` carries an error (SRS-LMBR-014).
 
@@ -139,7 +141,7 @@ Example (routed logging from a comms module):
 
 ## 5. Global configuration VIs
 
-### 5.1 Configure Level
+### 5.1 ConfigureLevel
 
 Sets the global (stage-1) threshold at runtime (SRS-LMBR-008).
 
@@ -147,9 +149,9 @@ Sets the global (stage-1) threshold at runtime (SRS-LMBR-008).
 - **Behavior:** posts an updated snapshot; takes effect for statements evaluated
   after the call.
 
-### 5.2 Configure Verbosity
+### 5.2 ConfigureVerbosity
 
-Sets the severity at or above which `Catch Error` shows an error dialog,
+Sets the severity at or above which `CatchError` shows an error dialog,
 independent of what is logged (SRS-LMBR-042).
 
 - **Inputs:** `verbosity`, `logger in` *(opt)*.
@@ -202,9 +204,9 @@ Appenders are created and configured as objects, then registered. The manager
 launches a registered appender and adds it to the broadcast. This keeps appender
 configuration with the appender type.
 
-### 7.1 Create a File Appender
+### 7.1 Create a FileAppender
 
-`Create File Appender` returns a configured (not yet launched) appender object.
+`CreateFileAppender` returns a configured (not yet launched) appender object.
 
 - **Inputs:** `id`, `threshold` *(opt, default = inherit sensible)*, `filter`
   *(opt, default mirror)*, `root folder`, `max file size` *(opt)*,
@@ -214,34 +216,34 @@ configuration with the appender type.
   CSV)*.
 - **Output:** `appender out` (an Appender object).
 
-### 7.2 Create a Console Appender
+### 7.2 Create a ConsoleAppender
 
-`Create Console Appender` returns a console sink. Same common inputs (`id`,
+`CreateConsoleAppender` returns a console sink. Same common inputs (`id`,
 `threshold`, `filter`, backpressure, `layout`); no file-specific fields.
 
-### 7.3 Create a Relay Appender
+### 7.3 Create a RelayAppender
 
-`Create Relay Appender` returns an appender whose sink is your application
+`CreateRelayAppender` returns an appender whose sink is your application
 (SRS-LMBR-023).
 
 - **Inputs:** common config, plus `mode` (message or queue).
   - Message mode: `consumer enqueuer` (your actor's enqueuer). Each accepted
-    statement is sent to it as a `Log Statement Msg` (SRS-LMBR-024).
+    statement is sent to it as a `LogStatementMsg` (SRS-LMBR-024).
   - Queue mode: no extra input; the VI also returns `relay queue out`, a queue
     refnum you Dequeue or Flush (SRS-LMBR-025).
 - **Output:** `appender out`, and `relay queue out` when in queue mode.
 
 ### 7.4 Register / Unregister
 
-- `Register Appender`: inputs `appender in`, `logger in` *(opt)*. Launches the
+- `RegisterAppender`: inputs `appender in`, `logger in` *(opt)*. Launches the
   appender as a nested actor, adds it to the broadcast, posts the updated
   snapshot. Callers pick it up on their next log call (SRS-LMBR-020, 028).
-- `Unregister Appender`: inputs `id`, `logger in` *(opt)*. Removes it from the
+- `UnregisterAppender`: inputs `id`, `logger in` *(opt)*. Removes it from the
   snapshot first, then stops it (it flushes and closes on stop).
 
 ### 7.5 Reconfigure at runtime
 
-`Configure Appender`: inputs `id`, `config delta`, `logger in` *(opt)*. Forwards
+`ConfigureAppender`: inputs `id`, `config delta`, `logger in` *(opt)*. Forwards
 the change to the target appender; it takes effect for statements that appender
 processes after the message (SRS-LMBR-043, and the ordering note in SDD 5.9).
 
@@ -255,7 +257,7 @@ The `filter` input is a small config:
 - Tag matching is hierarchical prefix (SRS-LMBR-027): prefix `app.db` matches
   `app.db` and `app.db.query`, not `app.database`.
 
-Helpers: `Make Mirror Filter` and `Make Routed Filter (level range, tag prefix)`
+Helpers: `MakeMirrorFilter` and `MakeRoutedFilter (level range, tag prefix)`
 build the cluster for you.
 
 ---
@@ -267,17 +269,17 @@ To consume statements in your own code, register a relay appender.
 **Message mode (recommended, actor consumers):**
 
 1. In your consuming actor, create a message class it understands, or accept
-   `Log Statement Msg` directly.
-2. `Create Relay Appender` with `mode = message` and `consumer enqueuer` = your
+   `LogStatementMsg` directly.
+2. `CreateRelayAppender` with `mode = message` and `consumer enqueuer` = your
    actor's enqueuer; set a `filter` to tap only what you want (for example a
    routed filter with level range ERROR..FATAL).
-3. `Register Appender`. Your actor now receives each accepted statement as a
+3. `RegisterAppender`. Your actor now receives each accepted statement as a
    message.
 
 **Queue mode (non-actor consumers):**
 
-1. `Create Relay Appender` with `mode = queue`; keep `relay queue out`.
-2. `Register Appender`.
+1. `CreateRelayAppender` with `mode = queue`; keep `relay queue out`.
+2. `RegisterAppender`.
 3. In your consumer loop, Dequeue (or Flush) from `relay queue out`.
 
 Because the relay is an appender, its threshold and filter apply, so you can
@@ -293,10 +295,10 @@ whole stream.
 ```
 Initialize (default file = full mirror, threshold TRACE=6 on that file)
 
-errAppender = Create File Appender(
+errAppender = CreateFileAppender(
     id="errors", root folder="...\errors",
-    filter = Make Mirror Filter,       threshold = ERROR (2))
-Register Appender(errAppender)
+    filter = MakeMirrorFilter,       threshold = ERROR (2))
+RegisterAppender(errAppender)
 ```
 
 The default file receives everything; `errors` receives only ERROR and FATAL
@@ -305,10 +307,10 @@ because its own threshold is 2 (SRS-LMBR-009, 040).
 ### 9.2 Route a subsystem to its own file
 
 ```
-commsAppender = Create File Appender(
+commsAppender = CreateFileAppender(
     id="comms", root folder="...\comms",
-    filter = Make Routed Filter(level range = TRACE..FATAL, tag prefix = "app.comms"))
-Register Appender(commsAppender)
+    filter = MakeRoutedFilter(level range = TRACE..FATAL, tag prefix = "app.comms"))
+RegisterAppender(commsAppender)
 ```
 
 Then log with tags:
@@ -321,10 +323,10 @@ Info(message="ui refresh", source tag="app.ui")        -> mirror files only, not
 ### 9.3 Relay ERROR-and-above to a UI actor
 
 ```
-relay = Create Relay Appender(
+relay = CreateRelayAppender(
     mode = message, consumer enqueuer = <UI actor enqueuer>,
-    filter = Make Routed Filter(level range = FATAL..ERROR, tag prefix = ""))
-Register Appender(relay)
+    filter = MakeRoutedFilter(level range = FATAL..ERROR, tag prefix = ""))
+RegisterAppender(relay)
 ```
 
 The UI actor receives only ERROR and FATAL statements as messages.
@@ -336,11 +338,11 @@ The UI actor receives only ERROR and FATAL statements as messages.
 A layout formats a statement into text (SRS-LMBR-015). Set it per appender via
 the `layout` input.
 
-- `Create CSV Layout` *(default)*: columns are
-  `timestamp, level, source tag, origin VI, message`, delimiter per file
+- `CreateCSVLayout` *(default)*: columns are
+  `timestamp, level, sourceTag, originVI, message`, delimiter per file
   appender, RFC 4180 quoting (SDD 5.4).
-- `Create JSON Layout`: one JSON object per statement.
-- `Create Text Layout`: a human-readable line.
+- `CreateJSONLayout`: one JSON object per statement.
+- `CreateTextLayout`: a human-readable line.
 
 Unwired, appenders use CSV.
 
@@ -348,7 +350,7 @@ Unwired, appenders use CSV.
 
 ## 11. Error handling
 
-`Catch Error` integrates with the LabVIEW General Error Handler to catch, log,
+`CatchError` integrates with the LabVIEW General Error Handler to catch, log,
 clear, and optionally display an error (SRS-LMBR-041).
 
 - **Inputs:** `error in`, `logger in` *(opt)*.
@@ -381,13 +383,13 @@ Lumberjack itself never derives external paths from its own VI location.
 | `Initialize` | `Initialize` | Adds config-file path, host-app path, default-file config, disable-default-file. |
 | `Trace`..`Fatal` | `Trace`..`Fatal` | Adds optional `source tag`; `logger in` optional. |
 | `Shutdown` | `Shutdown` | Same flush-and-close semantics. |
-| `Configure Level` | `Configure Level` | Now the stage-1 global threshold. |
-| `Configure Verbosity` | `Configure Verbosity` | Unchanged in intent. |
-| `Configure Maximum File Size/Count`, `Root Folder`, `File Extension`, `Delimiter`, `Calendar Folder Tree` | inputs to `Create File Appender` | Now per-appender, set at creation, not global. |
+| `ConfigureLevel` | `ConfigureLevel` | Now the stage-1 global threshold. |
+| `ConfigureVerbosity` | `ConfigureVerbosity` | Unchanged in intent. |
+| `Configure Maximum File Size/Count`, `Root Folder`, `File Extension`, `Delimiter`, `Calendar Folder Tree` | inputs to `CreateFileAppender` | Now per-appender, set at creation, not global. |
 | `Disable Default File` | `disable default file?` input on `Initialize` | Folded into launch. |
-| `Register Listener` / `Unregister Listener` | `Register Appender` / `Unregister Appender` | Listener renamed appender; now filterable. |
-| `Read Listener` | `Create Relay Appender` (queue mode) + Dequeue | Or message mode for actor consumers. |
-| `Catch Error`, `Mask Errors` | `Catch Error`, `Mask Errors` | Unchanged in intent. |
+| `Register Listener` / `Unregister Listener` | `RegisterAppender` / `UnregisterAppender` | Listener renamed appender; now filterable. |
+| `Read Listener` | `CreateRelayAppender` (queue mode) + Dequeue | Or message mode for actor consumers. |
+| `CatchError`, `MaskErrors` | `CatchError`, `MaskErrors` | Unchanged in intent. |
 
 Behavioral changes to note: filtering is two-stage (global coarse plus
 per-appender authoritative); multiple files with independent thresholds and
@@ -405,15 +407,15 @@ logger = Initialize(global threshold = INFO, default file config = cfg,
                     host application path = <app dir>)
 
 # errors-only second file, bounded for an RT target, level-aware drop
-err = Create File Appender(id="errors", root folder=<app>\logs\errors,
-        filter = Make Mirror Filter, threshold = ERROR,
+err = CreateFileAppender(id="errors", root folder=<app>\logs\errors,
+        filter = MakeMirrorFilter, threshold = ERROR,
         queue bound = 4096, drop policy = level-aware)
-Register Appender(err)
+RegisterAppender(err)
 
 # tap ERROR+ to the UI
-relay = Create Relay Appender(mode=message, consumer enqueuer=<UI>,
-        filter = Make Routed Filter(level range = FATAL..ERROR, tag prefix=""))
-Register Appender(relay)
+relay = CreateRelayAppender(mode=message, consumer enqueuer=<UI>,
+        filter = MakeRoutedFilter(level range = FATAL..ERROR, tag prefix=""))
+RegisterAppender(relay)
 
 # elsewhere, no handle needed (singleton)
 Info("startup complete")

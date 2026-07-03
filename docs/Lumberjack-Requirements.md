@@ -143,7 +143,7 @@ Notation: each requirement has an ID, a statement, and a lineage tag.
   SRS-LMBR-006) makes it a pass-through. Stage 2 is the per-appender threshold
   of SRS-LMBR-009, which is authoritative for what each sink actually writes.
 - **SRS-LMBR-008 [P]** The global threshold shall be runtime-configurable
-  (corresponds to Logger's `Configure Level`).
+  (corresponds to Logger's `ConfigureLevel`).
 - **SRS-LMBR-009 [N]** Each appender shall have its own independently
   configurable level threshold, evaluated on receipt of a statement. An appender
   shall write a statement to its sink only if the statement passes that
@@ -287,10 +287,10 @@ Notation: each requirement has an ID, a statement, and a lineage tag.
 
 - **SRS-LMBR-041 [P]** Lumberjack shall provide an error-catching operation that
   integrates with the LabVIEW General Error Handler to catch, log, clear, and
-  optionally display errors (Logger's `Catch Error`).
+  optionally display errors (Logger's `CatchError`).
 - **SRS-LMBR-042 [P]** A verbosity setting shall determine whether an error
   dialog is shown to the user, based on error severity, independent of what is
-  written to the log (Logger's `Configure Verbosity`).
+  written to the log (Logger's `ConfigureVerbosity`).
 
 ### 3.8 Configuration
 
@@ -420,9 +420,9 @@ messages thereafter.
 | SRS-LMBR-003 | Changed | `Initialize` (Maximum Messages, Buffer Capacity) |
 | SRS-LMBR-004 | New (made explicit) | `Shutdown` run-on-error behavior |
 | SRS-LMBR-005 | Preserved | `Severity.ctl` / `Tag.ctl` |
-| SRS-LMBR-006 | Preserved | `Configure Level` semantics |
+| SRS-LMBR-006 | Preserved | `ConfigureLevel` semantics |
 | SRS-LMBR-007 | Changed | central filtering -> two-stage (global coarse + per-appender) |
-| SRS-LMBR-008 | Preserved | `Configure Level` |
+| SRS-LMBR-008 | Preserved | `ConfigureLevel` |
 | SRS-LMBR-009 | New | per-appender threshold |
 | SRS-LMBR-010..012 | Preserved / Changed | statement format + source tag, CSV layout |
 | SRS-LMBR-013 | New | hierarchical source tag, defaults to origin VI |
@@ -445,7 +445,7 @@ messages thereafter.
 | SRS-LMBR-033..038 | Preserved | file config VIs, now per instance |
 | SRS-LMBR-039 | Changed | `Configure Root Folder`, now per instance |
 | SRS-LMBR-040 | New | independent per-file threshold and filter |
-| SRS-LMBR-041..042 | Preserved | `Catch Error`, `Configure Verbosity` |
+| SRS-LMBR-041..042 | Preserved | `CatchError`, `ConfigureVerbosity` |
 | SRS-LMBR-043 | Changed | Configure VIs -> runtime messages |
 | SRS-LMBR-044..049 | New | launch inputs + optional JSON config file: precedence, merge, missing = warn/fallback, invalid = fail |
 | SRS-LMBR-052 | New | async handoff |

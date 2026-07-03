@@ -12,7 +12,8 @@ checklist).
 
 - LabVIEW 2014 or newer (native JSON and the Actor Framework).
 - NI Actor Framework (the only runtime dependency).
-- Caraya, for the test suite only (not required at runtime).
+- Caraya ([https://www.vipm.io/package/jki_lib_caraya/](https://www.vipm.io/package/jki_lib_caraya/)),
+  for the test suite only (not required at runtime).
 
 ## What it does
 

@@ -159,7 +159,7 @@ Layout.lvclass                        by-value, stateless
   ├── JSONLayout.lvclass
   └── TextLayout.lvclass
 
-Logger.lvclass                        by-value caller facade (Notifier + manager enqueuer)
+Logger.lvclass                        by-value caller facade (Notifier + managerEnqueuer)
 ```
 
 `Statement` is a typedef cluster, not a class, because it is pure data passed
@@ -422,14 +422,18 @@ is the accepted cost of full routing flexibility.
 default `CSVLayout` (SRS-LMBR-012) resolves the deferred column order as:
 
 ```
-timestamp, level, source tag, origin VI, message
+timestamp, level, sourceTag, originVI, message
 ```
 
 The message is last because it is free text most likely to contain the
-delimiter. Fields are quoted per RFC 4180: a field containing the delimiter, a
-quote, or a newline is wrapped in double quotes and internal quotes are doubled.
-The delimiter is per-file-appender configurable (SRS-LMBR-037); the column order
-is fixed.
+delimiter. `CSVLayout` carries its `delimiter` as private data, so any single
+configured delimiter works: a comma yields CSV, a tab yields TSV, and any
+other single character its own delimited variant. The column order is fixed;
+only the delimiter varies. Fields are quoted per RFC 4180 against whichever
+delimiter is configured: a field containing that delimiter, a double quote, or
+a newline is wrapped in double quotes and internal quotes are doubled. The
+default file appender's configured delimiter (SRS-LMBR-037) is applied by
+constructing its `CSVLayout` with that delimiter.
 
 ### 5.5 File appender behavior
 
@@ -699,7 +703,7 @@ LabVIEW 2014 or newer (SRS-LMBR-060, 061, 062).
 |---|---|---|
 | SRS-LMBR-043 | Config application vs in-flight statements | Message-ordered, non-retroactive (5.9) |
 | SRS-LMBR-013 | Tag separator vs VI names containing dots | Default tag is single-node; dots in VI base name replaced with `_` (5.3) |
-| SRS-LMBR-012 | CSV column order | timestamp, level, source tag, origin VI, message; RFC 4180 quoting (5.4) |
+| SRS-LMBR-012 | CSV column order | timestamp, level, sourceTag, originVI, message; RFC 4180 quoting (5.4) |
 | SRS-LMBR-050 | JSON schema shape | Single object: global settings + default file appender; `schemaVersion` (4.2) |
 | SRS-LMBR-045 | Consumer read mechanism specifics | Relay appender, message and queue modes (5.6) |
 

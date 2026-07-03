@@ -46,7 +46,7 @@ temporary-folder setup/teardown fixture.
 Logger's coverage is narrow and formatting-centric. Untested, even for Logger's
 own features: level/threshold filtering, broadcast to multiple listeners,
 `Read Listener` consumption, file rollover by size, retention/pruning by count,
-calendar folder tree, ISO 8601 naming, verbosity and Catch Error, and
+calendar folder tree, ISO 8601 naming, verbosity and CatchError, and
 buffer/Maximum Messages behavior.
 
 Two things are worth carrying forward: Caraya as the framework (continuity, and
@@ -71,7 +71,7 @@ well; the strategy below is framework-neutral and would port.
   because the design pushed decision logic (filtering, formatting, config
   resolution, path resolution, retention) into pure VIs rather than into actor
   loops.
-- **Integration tier (launched actors).** Launches a Log Manager with a capture
+- **Integration tier (launched actors).** Launches a LogManager with a capture
   appender, drives log calls, and asserts on delivered content. Used only where
   behavior is genuinely emergent from the actor topology (broadcast,
   register/unregister, flush-on-shutdown, relay delivery).
@@ -99,7 +99,7 @@ well; the strategy below is framework-neutral and would port.
   before file tests and delete it after, so file appenders never touch shared
   locations and runs are repeatable. This generalizes Logger's Before/After File
   Logging.
-- **Manager fixture:** launch a Log Manager with the default file disabled and
+- **Manager fixture:** launch a LogManager with the default file disabled and
   exactly the appenders a test needs, then shut it down in TearDown, asserting a
   clean flush.
 
@@ -127,7 +127,7 @@ the requirements it covers.
 
 | Case | Assertion | Tier | SRS |
 |---|---|---|---|
-| CSV column order | fields emit as timestamp, level, source tag, origin VI, message | U | 010, 012 |
+| CSV column order | fields emit as timestamp, level, sourceTag, originVI, message | U | 010, 012 |
 | CSV quote escaping | a message with quotes/delimiter/newline is RFC 4180 quoted | U | 012 |
 | CSV custom delimiter | tab delimiter applied (Logger parity) | U | 012 |
 | ISO 8601 timestamp | timestamp field matches ISO 8601 | U | 011 |
@@ -211,7 +211,7 @@ the requirements it covers.
 |---|---|---|---|
 | Shutdown flush | queued statements are written before stop completes | I | 002 |
 | Shutdown on error | shutdown flush/close runs even with an incoming error | I | 004 |
-| Catch Error log | a caught error is logged at a derived severity | I | 041 |
+| CatchError log | a caught error is logged at a derived severity | I | 041 |
 | Verbosity gate | dialog shown only at/above configured verbosity | U | 042 |
 
 ### 4.10 PPL path safety
