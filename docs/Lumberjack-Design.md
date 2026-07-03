@@ -57,7 +57,7 @@ Lumberjack separates a low-frequency **control plane** from a high-frequency
 - **Control plane (message passing through the root actor):** launching and
   stopping appenders, applying configuration, registering and unregistering
   appenders. These are infrequent and are handled by messages to the root actor,
-  the `Log Manager`.
+  the `LogManager`.
 - **Data plane (caller-side fan-out via a shared reference):** the log-write hot
   path. A caller holds a lightweight `Logger` facade backed by a Notifier. The
   Notifier carries a read-only snapshot: the global threshold and the current
@@ -65,7 +65,7 @@ Lumberjack separates a low-frequency **control plane** from a high-frequency
   the coarse global threshold locally (SRS-LMBR-012), and enqueues the statement
   directly to each appender. The root is not in this path.
 
-The `Log Manager` is the sole poster of the Notifier snapshot. It sends an
+The `LogManager` is the sole poster of the Notifier snapshot. It sends an
 updated snapshot when the global threshold changes or the appender set changes.
 Callers only read, via a non-destructive read of the current notification
 (`Get Notifier Status`), which lets many caller threads read the latest snapshot
@@ -83,14 +83,14 @@ path, consistent with the async and fault-isolation requirements (SRS-LMBR-021,
 
 ```
 Launch Root Actor
-  └── Log Manager  (root actor)            control plane; owns config; posts the Notifier
-        ├── File Appender (default)         nested actor; owns its file resource
-        ├── File Appender (additional)      nested actor (optional, N instances)
-        ├── Console Appender                nested actor (optional)
-        └── Relay Appender                  nested actor (optional; taps the stream)
+  └── LogManager  (root actor)            control plane; owns config; posts the Notifier
+        ├── FileAppender (default)         nested actor; owns its file resource
+        ├── FileAppender (additional)      nested actor (optional, N instances)
+        ├── ConsoleAppender                nested actor (optional)
+        └── RelayAppender                  nested actor (optional; taps the stream)
 ```
 
-All appenders are launched as **nested actors** of the `Log Manager`, so their
+All appenders are launched as **nested actors** of the `LogManager`, so their
 lifecycle is tied to it: stopping the manager stops and flushes every appender
 (SRS-LMBR-002). Appenders do not know about one another; they are independent
 (SRS-LMBR-018, 021, 022).
@@ -105,7 +105,7 @@ A single log call performs:
    obtaining the global threshold and the appender enqueuer array.
 2. If the statement's severity rank exceeds the global threshold, return
    immediately; nothing is enqueued (SRS-LMBR-012 stage 1).
-3. Otherwise, build the `Statement` and enqueue a `Log Statement Msg` to each
+3. Otherwise, build the `Statement` and enqueue a `LogStatementMsg` to each
    appender enqueuer (SRS-LMBR-019). The call then returns without waiting for
    any sink I/O (SRS-LMBR-052).
 
@@ -119,7 +119,7 @@ appender configuration.
 Two elements are deliberately not actors:
 
 - **`Logger` facade** (by-value class wrapping the Notifier refnum and the
-  `Log Manager` enqueuer). Held by callers; provides the per-level log VIs and
+  `LogManager` enqueuer). Held by callers; provides the per-level log VIs and
   the control operations. Being by-value and refnum-backed, copies are cheap and
   all share the same underlying Notifier and manager.
 - **`Layout`** (by-value class). Formats a `Statement` into text. Not an actor
@@ -141,23 +141,23 @@ loggers) for callers that wire `logger in`.
 
 ```
 Actor.lvclass                         (framework)
-  ├── Log Manager.lvclass             root actor
+  ├── LogManager.lvclass             root actor
   └── Appender.lvclass                abstract base for all sinks
-        ├── File Appender.lvclass
-        ├── Console Appender.lvclass
-        └── Relay Appender.lvclass
+        ├── FileAppender.lvclass
+        ├── ConsoleAppender.lvclass
+        └── RelayAppender.lvclass
 
 Message.lvclass                       (framework)
-  ├── Log Statement Msg.lvclass       data plane
-  ├── Register Appender Msg.lvclass   control plane
-  ├── Unregister Appender Msg.lvclass control plane
-  ├── Set Global Threshold Msg.lvclass control plane
-  └── Configure Appender Msg.lvclass  control plane
+  ├── LogStatementMsg.lvclass       data plane
+  ├── RegisterAppenderMsg.lvclass   control plane
+  ├── UnregisterAppenderMsg.lvclass control plane
+  ├── SetGlobalThresholdMsg.lvclass control plane
+  └── ConfigureAppenderMsg.lvclass  control plane
 
 Layout.lvclass                        by-value, stateless
-  ├── CSV Layout.lvclass              default
-  ├── JSON Layout.lvclass
-  └── Text Layout.lvclass
+  ├── CSVLayout.lvclass              default
+  ├── JSONLayout.lvclass
+  └── TextLayout.lvclass
 
 Logger.lvclass                        by-value caller facade (Notifier + manager enqueuer)
 ```
@@ -183,46 +183,46 @@ appender shares (SRS-LMBR-029):
 `Appender.lvclass` defines dynamic-dispatch members overridden by each concrete
 type:
 
-- `Open Sink.vi` (protected) opens the type's resource during actor startup (for
+- `OpenSink.vi` (protected) opens the type's resource during actor startup (for
   example, opens the first log file).
 - `Write.vi` (protected) writes one already-formatted, already-accepted line to
   the sink.
-- `Close Sink.vi` (protected) closes the resource during shutdown.
-- `Init Common.vi` sets the common private data from an `Appender Config`
+- `CloseSink.vi` (protected) closes the resource during shutdown.
+- `InitCommon.vi` sets the common private data from an `AppenderConfig`
   cluster (called by each child's init, see 4.4).
 
 The base class implements, once, the receipt logic shared by all appenders: on a
-`Log Statement Msg`, evaluate the appender threshold and selection filter; if
+`LogStatementMsg`, evaluate the appender threshold and selection filter; if
 accepted, format via the layout and call `Write.vi`. Concrete types implement
 only their sink specifics.
 
 ### 3.3 Concrete appenders
 
-- **File Appender** adds: root folder, maximum file size, maximum file count,
+- **FileAppender** adds: root folder, maximum file size, maximum file count,
   extension, delimiter, calendar-folder-tree enable (SRS-LMBR-030, 032..040).
-  `Open Sink` creates the base folder and opens the first ISO 8601-named file;
+  `OpenSink` creates the base folder and opens the first ISO 8601-named file;
   `Write` appends a line and triggers rollover/retention (5.5).
-- **Console Appender** adds nothing beyond common config; `Write` prints the
+- **ConsoleAppender** adds nothing beyond common config; `Write` prints the
   formatted line.
-- **Relay Appender** adds: delivery mode (message or queue) and, for message
+- **RelayAppender** adds: delivery mode (message or queue) and, for message
   mode, the application-supplied enqueuer; for queue mode, an owned LabVIEW
   queue whose reference is exposed (SRS-LMBR-023..025, 5.6).
 
 ### 3.4 Configuration clusters
 
 LabVIEW clusters do not inherit, so the common configuration is expressed by
-**composition**: a common `Appender Config` cluster is nested inside each
+**composition**: a common `AppenderConfig` cluster is nested inside each
 type-specific config typedef.
 
-- `Appender Config` (common): ID, threshold, filter mode, filter criteria, queue
+- `AppenderConfig` (common): ID, threshold, filter mode, filter criteria, queue
   bound, drop policy.
-- `File Appender Config` = `Appender Config` + file fields.
-- `Lumberjack Config` (top level, the JSON/inputs boundary) = { schema version,
-  global threshold, default `File Appender Config` }.
+- `FileAppenderConfig` = `AppenderConfig` + file fields.
+- `LumberjackConfig` (top level, the JSON/inputs boundary) = { schema version,
+  global threshold, default `FileAppenderConfig` }.
 
 The actor **classes** inherit (3.1); the config **clusters** compose. The init
 chain bridges the two: a child receives its config typedef, sets its own private
-fields, and passes the nested `Appender Config` to `Init Common.vi` (4.4).
+fields, and passes the nested `AppenderConfig` to `InitCommon.vi` (4.4).
 
 ### 3.5 Message catalog
 
@@ -230,25 +230,25 @@ Data plane (caller -> appender enqueuer):
 
 | Message | Payload | Do.vi action |
 |---|---|---|
-| Log Statement Msg | `Statement` cluster | Base `Appender` evaluates threshold + filter; if accepted, format and `Write`. |
+| LogStatementMsg | `Statement` cluster | Base `Appender` evaluates threshold + filter; if accepted, format and `Write`. |
 
-Control plane (caller/`Logger` -> `Log Manager` enqueuer):
+Control plane (caller/`Logger` -> `LogManager` enqueuer):
 
 | Message | Payload | Do.vi action |
 |---|---|---|
-| Register Appender Msg | a constructed, pre-configured `Appender` object | Launch it as a nested actor, add its enqueuer to the registry, post an updated Notifier snapshot. |
-| Unregister Appender Msg | appender ID | Post an updated snapshot without that enqueuer, then send framework Stop to the appender and remove it from the registry. |
-| Set Global Threshold Msg | threshold | Post an updated snapshot with the new threshold. |
-| Configure Appender Msg | appender ID + config delta | Forward as a per-appender configure message to the target appender. |
+| RegisterAppenderMsg | a constructed, pre-configured `Appender` object | Launch it as a nested actor, add its enqueuer to the registry, post an updated Notifier snapshot. |
+| UnregisterAppenderMsg | appender ID | Post an updated snapshot without that enqueuer, then send framework Stop to the appender and remove it from the registry. |
+| SetGlobalThresholdMsg | threshold | Post an updated snapshot with the new threshold. |
+| ConfigureAppenderMsg | appender ID + config delta | Forward as a per-appender configure message to the target appender. |
 
 Manager -> appender (control):
 
 | Message | Payload | Do.vi action |
 |---|---|---|
-| Configure Msg | config delta | Apply to the appender's private data (threshold/filter/backpressure/type-specific). |
+| ConfigureMsg | config delta | Apply to the appender's private data (threshold/filter/backpressure/type-specific). |
 | Stop (framework) | none | Flush and close the sink, then stop. |
 
-The `Logger` facade holds both the Notifier (data plane) and the `Log Manager`
+The `Logger` facade holds both the Notifier (data plane) and the `LogManager`
 enqueuer (control plane); all control operations are convenience wrappers that
 enqueue the messages above.
 
@@ -262,7 +262,7 @@ Effective configuration is resolved **once, at launch** (SRS-LMBR-051), from two
 sources:
 
 1. Programmatic launch inputs: the global threshold and the default file
-   appender's `File Appender Config` (SRS-LMBR-044).
+   appender's `FileAppenderConfig` (SRS-LMBR-044).
 2. An optional JSON configuration file path (SRS-LMBR-045).
 
 Precedence is per-setting: a value present in a valid file overrides the
@@ -274,7 +274,7 @@ matching launch input; any setting absent from the file falls back to the input
 The pipeline is implemented with native JSON primitives (SRS-LMBR-061), and the
 per-key merge falls out of the primitive itself:
 
-1. Build the `Lumberjack Config` cluster from the launch inputs (the baseline).
+1. Build the `LumberjackConfig` cluster from the launch inputs (the baseline).
 2. If a config-file path is supplied:
    - If the file is **missing**: keep the baseline, complete launch, and return
      a non-fatal warning naming the path (SRS-LMBR-047).
@@ -326,10 +326,10 @@ understand.
 
 ### 4.3 Launch sequence
 
-1. `Launch Root Actor` starts the `Log Manager` and returns its enqueuer,
+1. `Launch Root Actor` starts the `LogManager` and returns its enqueuer,
    wrapped in a `Logger` facade along with a freshly created Notifier.
-2. The `Log Manager` resolves effective configuration (4.2).
-3. It constructs the default `File Appender` object, sets its configuration
+2. The `LogManager` resolves effective configuration (4.2).
+3. It constructs the default `FileAppender` object, sets its configuration
    through the init chain (4.4), and launches it as a nested actor, obtaining
    its enqueuer. If the default file is disabled, this step is skipped
    (SRS-LMBR-038).
@@ -340,7 +340,7 @@ understand.
    rides out on the error wire.
 
 Additional appenders are added afterward by the application constructing and
-configuring an appender object and sending `Register Appender Msg`
+configuring an appender object and sending `RegisterAppenderMsg`
 (SRS-LMBR-028, 031, 044).
 
 ### 4.4 Parent/child init chain
@@ -352,12 +352,12 @@ chain (SRS-LMBR-031):
    type's `Init.vi` with the type-specific config typedef.
 2. `Init.vi` sets the child's own private fields (for example, the file
    appender's root folder and rollover settings).
-3. `Init.vi` calls the parent method `Init Common.vi`, passing the nested
-   `Appender Config` cluster, which sets the common private data (ID, threshold,
+3. `Init.vi` calls the parent method `InitCommon.vi`, passing the nested
+   `AppenderConfig` cluster, which sets the common private data (ID, threshold,
    filter, backpressure, layout).
 4. The now-configured actor object is handed to `Launch Actor` /
-   `Register Appender Msg`. Resource opening happens later, in the actor's
-   startup, via `Open Sink.vi`.
+   `RegisterAppenderMsg`. Resource opening happens later, in the actor's
+   startup, via `OpenSink.vi`.
 
 The root never parses or holds a concrete appender's type-specific fields; it
 only moves the constructed object. Adding a new appender type is a new subclass
@@ -377,7 +377,7 @@ For `Logger.Info("...", optional tag)`:
 3. Build the `Statement`: ISO 8601 timestamp, level name, source tag (supplied
    or defaulted, 5.3), origin VI name (from the call chain), message
    (SRS-LMBR-010, 011, 017).
-4. For each enqueuer in the snapshot array, enqueue a `Log Statement Msg`.
+4. For each enqueuer in the snapshot array, enqueue a `LogStatementMsg`.
 5. Return. No sink I/O has occurred on the caller's thread (SRS-LMBR-052).
 
 Each appender, on its own thread, dequeues the message, applies stage-2
@@ -419,7 +419,7 @@ is the accepted cost of full routing flexibility.
 ### 5.4 Layout and CSV column order
 
 `Layout.Format(Statement) -> String` is dynamic dispatch (SRS-LMBR-015). The
-default `CSV Layout` (SRS-LMBR-012) resolves the deferred column order as:
+default `CSVLayout` (SRS-LMBR-012) resolves the deferred column order as:
 
 ```
 timestamp, level, source tag, origin VI, message
@@ -449,7 +449,7 @@ is fixed.
 ### 5.6 Relay appender behavior
 
 - **Message mode (default, SRS-LMBR-024):** each accepted statement is forwarded
-  as a `Log Statement Msg` to the application-supplied enqueuer. The consumer is
+  as a `LogStatementMsg` to the application-supplied enqueuer. The consumer is
   itself an actor whose inbound queue obeys the same backpressure policy as any
   appender (5.7).
 - **Queue mode (compatibility, SRS-LMBR-025):** accepted statements are enqueued
@@ -484,10 +484,10 @@ enqueue always completes.
 ### 5.8 Register and unregister at runtime
 
 - **Register (SRS-LMBR-020, 028):** the application constructs and configures an
-  appender, then sends `Register Appender Msg`. The manager launches it, adds
+  appender, then sends `RegisterAppenderMsg`. The manager launches it, adds
   its enqueuer to the registry, and posts an updated Notifier snapshot. Callers
   pick up the new appender on their next snapshot read.
-- **Unregister (SRS-LMBR-020):** `Unregister Appender Msg` with an ID causes the
+- **Unregister (SRS-LMBR-020):** `UnregisterAppenderMsg` with an ID causes the
   manager to remove the enqueuer from the snapshot first (so callers stop
   targeting it), then send the framework Stop to that appender, which flushes
   and closes before stopping.
@@ -503,10 +503,10 @@ its enqueue harmlessly and does not affect other appenders (SRS-LMBR-021).
 Runtime configuration is applied by messages, so ordering is well defined by
 message order, not retroactive:
 
-- **Global threshold:** `Set Global Threshold Msg` posts an updated Notifier
+- **Global threshold:** `SetGlobalThresholdMsg` posts an updated Notifier
   snapshot. Statements evaluated by callers after that post use the new
   threshold; statements already enqueued are unaffected.
-- **Per-appender config:** `Configure Appender Msg` is forwarded to the target
+- **Per-appender config:** `ConfigureAppenderMsg` is forwarded to the target
   appender and takes effect for statements that appender dequeues after the
   configure message. Statements already ahead of it in that appender's queue are
   processed under the prior configuration.
@@ -517,7 +517,7 @@ verification can assert it.
 
 ### 5.10 Shutdown
 
-`Logger.Shutdown` sends the framework Stop to the `Log Manager`, which stops
+`Logger.Shutdown` sends the framework Stop to the `LogManager`, which stops
 each nested appender. Each appender, on stop, drains and writes any queued
 statements, then closes its sink (SRS-LMBR-002). Shutdown completes its
 flush-and-close even if a prior error is present on the wire (SRS-LMBR-004).
@@ -592,17 +592,17 @@ lumberjack/
     Public/
       Logger.lvclass/        API facade
     Core/
-      Log Manager.lvclass/   root actor
+      LogManager.lvclass/   root actor
       Appender.lvclass/      abstract base
       Appenders/
-        File Appender.lvclass/
-        Console Appender.lvclass/
-        Relay Appender.lvclass/
+        FileAppender.lvclass/
+        ConsoleAppender.lvclass/
+        RelayAppender.lvclass/
       Layouts/
         Layout.lvclass/      abstract Format (DD)
-        CSV Layout.lvclass/
-        JSON Layout.lvclass/
-        Text Layout.lvclass/
+        CSVLayout.lvclass/
+        JSONLayout.lvclass/
+        TextLayout.lvclass/
     Messages/                one class per message
     Types/                   typedef controls
     Support/                 internal helpers:
@@ -610,7 +610,7 @@ lumberjack/
       Path/  Store/  Severity/
   examples/
   tests/                     Unit/ Integration/ Support/
-  Scripts/                   Build, Build PPL, Package, Test
+  scripts/                   Build, Build PPL, Package, Test
 ```
 
 Roles and scopes are in 8.1 and the 8.3 mapping table; per-class member lists
@@ -621,7 +621,7 @@ are in the Message and Class Reference. This tree shows layout only.
 | Element | Path | Scope |
 |---|---|---|
 | Logger facade | `src/Public/Logger.lvclass/` | public (the API) |
-| Log Manager | `src/Core/Log Manager.lvclass/` | community |
+| LogManager | `src/Core/LogManager.lvclass/` | community |
 | Appender base and concretes | `src/Core/Appender.lvclass/`, `src/Core/Appenders/` | base community; `Init` public, sink members protected |
 | Layouts | `src/Core/Layouts/` | `Create` public, `Format` public DD |
 | Messages | `src/Messages/` | community/private (internal transport) |
@@ -646,11 +646,11 @@ sub-palette, since the file `Configure` settings moved onto appender creation:
 ```
 Lumberjack
   Action-Status:  Initialize | Trace Debug Info Warn Error Fatal | Shutdown
-  Appenders:      Create File/Console/Relay Appender | Register/Unregister/Configure Appender
-                  | Make Mirror Filter | Make Routed Filter | Create CSV/JSON/Text Layout
-  Configure:      Configure Level | Configure Verbosity
-  Data:           Get Relay Queue (queue-mode consumption)
-  Utility:        Catch Error | Mask Errors | Create Temporary Root Folder
+  Appenders:      Create File/Console/RelayAppender | Register/Unregister/ConfigureAppender
+                  | MakeMirrorFilter | MakeRoutedFilter | Create CSV/JSON/TextLayout
+  Configure:      ConfigureLevel | ConfigureVerbosity
+  Data:           GetRelayQueue (queue-mode consumption)
+  Utility:        CatchError | MaskErrors | CreateTemporaryRootFolder
 ```
 
 The `.mnu` files reference public VIs only; member scope still governs
@@ -710,7 +710,7 @@ LabVIEW 2014 or newer (SRS-LMBR-060, 061, 062).
 | Design element | Section | Satisfies |
 |---|---|---|
 | Control/data-plane split | 2.1 | 012, 021, 052, 058 |
-| Log Manager root actor | 2.2, 3.1 | 001, 002, 008, 020, 043 |
+| LogManager root actor | 2.2, 3.1 | 001, 002, 008, 020, 043 |
 | Actor tree, nested appenders | 2.2 | 002, 018, 028 |
 | Caller-side fan-out, Notifier snapshot | 2.1, 2.3, 5.1 | 012, 019, 052 |
 | Logger facade | 2.4, 3.1 | 016, 017 |
