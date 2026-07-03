@@ -10,8 +10,8 @@ singleton "Logger" library on top of the NI Actor Framework.
 ## Requirements
 
 - LabVIEW 2014 or newer (native JSON and the Actor Framework).
-- NI Actor Framework (the only runtime dependency).
-- Caraya, for the test suite only (not required at runtime).
+- NI Actor Framework (the only runtime dependency, Part of LabVIEW Base).
+- Caraya (https://www.jki.net/caraya), for the test suite only (not required at runtime).
 
 ## What it does
 
@@ -27,6 +27,7 @@ singleton "Logger" library on top of the NI Actor Framework.
   instance API.
 
 ## Quick start
+@TODO - Include a VI snippet/PNG when available 
 
 Singleton style, three nodes:
 

@@ -10,12 +10,12 @@
 
 ## Phase 0 - Shell
 
-- [ ] 1. Create `Lumberjack.lvproj` in LabVIEW 2014; add a blank `Lumberjack.lvlib` as the namespace root; add the Actor Framework as the one runtime dependency. (Container first, so nothing added later needs renaming or relinking.)
+- [X] 1. Create `Lumberjack.lvproj` in LabVIEW 2014; add a blank `Lumberjack.lvlib` as the namespace root; add the Actor Framework as the one runtime dependency. (Container first, so nothing added later needs renaming or relinking.)
 
 ## Phase 1 - Leaf typedefs
 
-- [ ] 2. `Severity` enum. (No dependencies; referenced by nearly everything, so first.)
-- [ ] 3. `Drop Policy`, `Relay Mode`, `Filter Mode` enums. (Standalone.)
+- [X] 2. `Severity` enum. (No dependencies; referenced by nearly everything, so first.)
+- [X] 3. `Drop Policy`, `Relay Mode`, `Filter Mode` enums. (Standalone.)
 - [ ] 4. `Statement` cluster. (Severity.)
 - [ ] 5. `Filter` cluster. (Severity, Filter Mode.)
 

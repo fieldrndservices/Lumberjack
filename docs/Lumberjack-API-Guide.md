@@ -40,6 +40,8 @@ Log to the default file with three nodes:
 2. Anywhere in your code, drop `Info` and wire a message string. No handle needed.
 3. `Shutdown` at application exit to flush and close.
 
+@TODO - Include a VI snippet/PNG when available 
+
 ```
 [Initialize] ---> ... your app ... ---> [Shutdown]
                      |

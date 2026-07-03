@@ -18,5 +18,5 @@ desktop.ini
 
 # --- Rendered docs are artifacts of the Markdown sources ---
 # Uncomment if you prefer to regenerate rather than commit them:
-# docs/*.docx
-# docs/*.pdf
+docs/*.docx
+docs/*.pdf
