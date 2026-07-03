@@ -407,7 +407,7 @@ lumberjack/
       Path/  Store/  Severity/
   examples/
   tests/                     Unit/ Integration/ Support/
-  Scripts/                   Build, Build PPL, Package, Test
+  scripts/                   Build, Build PPL, Package, Test
 ```
 
 Roles and scopes are in 8.1 and the 8.3 mapping table; per-class member lists are in the Message and Class Reference. This tree shows layout only.
