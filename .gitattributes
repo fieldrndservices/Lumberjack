@@ -1,0 +1,26 @@
+# Normalize line endings for text files; binaries are marked explicitly below.
+* text=auto
+
+# --- LabVIEW source files ---
+# These are binary, or XML that must NOT be auto-merged (git merges corrupt
+# them). Use NI LVCompare / LVMerge to diff and merge visually.
+*.vi      binary
+*.vit     binary
+*.vim     binary
+*.ctl     binary
+*.ctt     binary
+*.llb     binary
+*.lvclass binary
+*.lvlib   binary
+*.lvproj  binary
+*.lvlibp  binary
+*.mnu     binary
+
+# --- Documentation and diagram artifacts ---
+*.docx    binary
+*.pdf     binary
+*.png     binary
+
+# --- Text sources ---
+*.md      text eol=lf
+*.json    text eol=lf

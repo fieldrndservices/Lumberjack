@@ -1,17 +1,24 @@
-# Libraries
-*.lvlibp
-*.llb
-
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
-
-# Executables
-*.exe
-
-# Metadata
+# --- LabVIEW ---
+# Object cache and per-user settings (regenerable)
+.cache/
 *.aliases
 *.lvlps
-.cache/
+*.UserState
+
+# --- Build outputs (regenerable, not committed) ---
+/builds/
+*.lvlibp        # Packed Project Library (output of Build PPL)
+*.vip           # VI Package (output of Package)
+
+# --- OS / editor cruft ---
+.DS_Store
+Thumbs.db
+desktop.ini
+*~
+*.tmp
+*.zip
+
+# --- Rendered docs are artifacts of the Markdown sources ---
+# Uncomment if you prefer to regenerate rather than commit them:
+docs/*.docx
+docs/*.pdf
