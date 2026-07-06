@@ -4,5 +4,26 @@
 	<Property Name="NI.Lib.SourceVersion" Type="Int">637566976</Property>
 	<Property Name="NI.Lib.Version" Type="Str">1.0.0.0</Property>
 	<Property Name="NI.LV.All.SourceOnly" Type="Bool">true</Property>
-	<Item Name="Severity.ctl" Type="VI" URL="../Types/Severity.ctl"/>
+	<Item Name="Core" Type="Folder">
+		<Item Name="Layouts" Type="Folder">
+			<Item Name="CSVLayout.lvclass" Type="LVClass" URL="../Core/Layouts/CSVLayout.lvclass/CSVLayout.lvclass"/>
+			<Item Name="JSONLayout.lvclass" Type="LVClass" URL="../Core/Layouts/JSONLayout.lvclass/JSONLayout.lvclass"/>
+			<Item Name="Layout.lvclass" Type="LVClass" URL="../Core/Layouts/Layout.lvclass/Layout.lvclass"/>
+			<Item Name="TextLayout.lvclass" Type="LVClass" URL="../Core/Layouts/TextLayout.lvclass/TextLayout.lvclass"/>
+		</Item>
+	</Item>
+	<Item Name="TypeDefs" Type="Folder">
+		<Property Name="NI.SortType" Type="Int">3</Property>
+		<Item Name="Statement.ctl" Type="VI" URL="../Types/Statement.ctl"/>
+		<Item Name="DropPolicy.ctl" Type="VI" URL="../Types/DropPolicy.ctl"/>
+		<Item Name="Filter.ctl" Type="VI" URL="../Types/Filter.ctl"/>
+		<Item Name="FilterMode.ctl" Type="VI" URL="../Types/FilterMode.ctl"/>
+		<Item Name="RelayMode.ctl" Type="VI" URL="../Types/RelayMode.ctl"/>
+		<Item Name="Severity.ctl" Type="VI" URL="../Types/Severity.ctl"/>
+		<Item Name="AppenderConfig.ctl" Type="VI" URL="../Types/AppenderConfig.ctl"/>
+		<Item Name="FileAppenderConfig.ctl" Type="VI" URL="../Types/FileAppenderConfig.ctl"/>
+		<Item Name="RelayAppenderConfig.ctl" Type="VI" URL="../Types/RelayAppenderConfig.ctl"/>
+		<Item Name="LumberjackConfig.ctl" Type="VI" URL="../Types/LumberjackConfig.ctl"/>
+		<Item Name="Snapshot.ctl" Type="VI" URL="../Types/Snapshot.ctl"/>
+	</Item>
 </Library>
