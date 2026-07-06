@@ -10,9 +10,9 @@ checklist).
 
 ## Requirements
 
-- LabVIEW 2014 or newer (native JSON and the Actor Framework).
-- NI Actor Framework (the only runtime dependency).
-- Caraya ([https://www.vipm.io/package/jki_lib_caraya/](https://www.vipm.io/package/jki_lib_caraya/)),
+- LabVIEW 2014 or newer (includes native JSON and NI Actor Framework - the
+  only runtime dependencies).
+- [Caraya](https://www.vipm.io/package/jki_lib_caraya/),
   for the test suite only (not required at runtime).
 
 ## What it does
@@ -70,7 +70,7 @@ Markdown is the source of truth; the `.docx` files are rendered from it.
 - Build checklist:
   [`docs/Lumberjack-Build-Checklist.md`](docs/Lumberjack-Build-Checklist.md)
 
-## Building and testing
+## PPL building and testing (optional)
 
 - Build the packed library with `scripts/Build PPL.vi`, the VI Package with
   `scripts/Package.vi`, and a source distribution with `scripts/Build.vi`.
