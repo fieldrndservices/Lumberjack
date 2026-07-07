@@ -76,10 +76,14 @@ The common configuration shared by every appender (SRS-LMBR-029). Composed
 | layout | Layout | formatting strategy (SRS-LMBR-015) |
 
 ### 2.7 FileAppenderConfig (cluster)
-`AppenderConfig` (nested as `common`) plus: `rootFolder` (Path),
-`maxFileSize` (U64), `maxFileCount` (U32, 0 = keep all), `extension`
-(String), `delimiter` (String), `calendarFolderTree` (Bool) (SRS-LMBR-030,
-032-040).
+`AppenderConfig` (nested as `common`) plus: `baseName` (String, opt),
+`rootFolder` (Path), `maxFileSize` (U64), `maxFileCount` (U32, 0 = keep all),
+`extension` (String), `delimiter` (String), `calendarFolderTree` (Bool),
+`useUTC` (Bool) (SRS-LMBR-030, 032-040).
+
+`baseName` is an optional filename prefix (empty = timestamp-only names).
+`useUTC` selects the time frame (UTC vs local) for the file name, the calendar
+folder, and the layout's timestamp column together, so all three agree.
 
 `delimiter` is a formatting concern owned by the layout; the file appender feeds
 this value into the `CSVLayout` it constructs, so it is not an independent
@@ -183,7 +187,7 @@ Writes statements to rolling, retained log files.
 | CloseSink | protected | override | Flush and close the current file. |
 | Configure | protected | override | Extend base Configure with file-specific fields (per-instance, SRS-LMBR-039, 040). |
 | OpenNewFile | private | static | Open a new timestamped file and reset the size counter. |
-| Prune | private | static | Delete oldest files beyond `maxFileCount` (0 = keep all). |
+| Prune | private | static | List this appender's own `baseName_*` files across the root (and any calendar sub-folders), then delete oldest beyond `maxFileCount` via `PruneSelection` (grouped per base name); 0 = keep all. |
 
 ### 3.5 ConsoleAppender.lvclass
 Writes formatted lines to the console/standard output.

@@ -309,11 +309,13 @@ only; it does not list appenders:
       "dropPolicy": "dropOldest"
     },
     "rootFolder": "",
+    "baseName": "",
     "maxFileSize": 10485760,
     "maxFileCount": 10,
     "extension": "csv",
     "delimiter": ",",
-    "calendarFolderTree": true
+    "calendarFolderTree": true,
+    "useUTC": true
   }
 }
 ```
@@ -437,14 +439,18 @@ constructing its `CSVLayout` with that delimiter.
 
 ### 5.5 File appender behavior
 
-- **Naming:** every file name embeds an ISO 8601 timestamp so a new file never
-  overwrites a prior one (SRS-LMBR-035).
+- **Naming:** each file name is an optional `baseName` prefix plus an ISO 8601
+  timestamp (colons removed; UTC or local per `useUTC`), so a new file never
+  overwrites a prior one and names sort chronologically (SRS-LMBR-035).
 - **Rollover:** before a write that would exceed the configured maximum size,
   the current file is closed and a new timestamped file is opened
   (SRS-LMBR-033).
-- **Retention:** after a rollover, if the file count in the target folder
-  exceeds the maximum, the oldest is deleted; a maximum of 0 means never delete
-  (SRS-LMBR-034).
+- **Retention:** after a rollover, retention is applied per base-name series:
+  within each `baseName`, the oldest files beyond the maximum count are
+  deleted; a maximum of 0 means never delete (SRS-LMBR-034). Grouping by base
+  name keeps series with different base names (or a shared root folder) from
+  pruning against each other; the appender also lists only its own
+  `baseName_*` files before selecting.
 - **Calendar tree:** when enabled, files are placed in a dated sub-folder
   hierarchy under the root folder, based on creation date (SRS-LMBR-036).
 - Each of these settings is per-instance, so multiple file appenders write to
@@ -533,21 +539,26 @@ flush-and-close even if a prior error is present on the wire (SRS-LMBR-004).
 ## 6. Path Resolution under a Packed Project Library
 
 Lumberjack is buildable as a PPL (SRS-LMBR-063). When code runs from a PPL,
-`Current VI's Path` and `Application Directory` resolve to a location inside the
-`.lvlibp`, which is not the host application's directory (SRS-LMBR-064). The
-design therefore never self-derives external paths:
+`Current VI's Path` resolves to a location inside the `.lvlibp`, which is never
+the host application's directory, so the design never derives an external path
+from a Lumberjack VI's own location (SRS-LMBR-064). External-path computation is
+quarantined in a single VI, `ResolveHostRoot` (`src/Support/Path/`):
 
-- The file appender root folder comes from configuration or launch inputs
-  (SRS-LMBR-039, 044).
-- A relative config-file path is resolved against the host application's
-  directory, obtained from the top-level caller context, not from any Lumberjack
-  library VI's path.
-- When a default root folder must be computed (empty `rootFolder` in config), it
-  is derived from the host application context passed in at launch, not from the
-  library's own location.
+- If the caller supplies `host application path` at launch, that value is used
+  directly (the deterministic, recommended path).
+- Otherwise, running in the development system, the host root falls back to
+  `Application Directory`, which reports the top-level application context, not
+  the calling VI's PPL location.
+- Otherwise, running as a built application (`Application.Kind = Run Time
+  System`) with no host path supplied, `ResolveHostRoot` returns a fatal
+  **error 5000** rather than defaulting to the executable folder, which under
+  Windows UAC is often read-only (Program Files). A deployed build must supply
+  an explicit, writable host path.
 
-No library VI calls `Current VI's Path` or `Application Directory` for the
-purpose of locating external resources.
+The file appender root folder otherwise comes from configuration or launch
+inputs (SRS-LMBR-039, 044); a relative or empty root is resolved against this
+host root. `ResolveHostRoot` is the only VI permitted to compute an external
+base path, and it never calls `Current VI's Path`.
 
 ---
 
@@ -630,7 +641,8 @@ are in the Message and Class Reference. This tree shows layout only.
 | Layouts | `src/Core/Layouts/` | `Create` public, `Format` public DD |
 | Messages | `src/Messages/` | community/private (internal transport) |
 | Type definitions | `src/Types/` | public where they cross the API (Severity, config clusters, Filter); private otherwise (Snapshot) |
-| Config / file / tag / path / store helpers | `src/Support/` | private |
+| Pure helpers (Severity, Tag, File) | `src/Support/Severity`, `Tag`, `File` | community (test library is a friend), off the public PPL surface |
+| Store and Path helpers | `src/Support/Store`, `Path` | private |
 
 Two placements tie to earlier decisions: the singleton process store is isolated
 in `Support/Store/` and kept private so adopters never see the default-instance

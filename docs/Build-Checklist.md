@@ -41,16 +41,19 @@ or the reason for the position.
 - [x] 9. `FileAppenderConfig`, `RelayAppenderConfig`. (AppenderConfig; plus
       RelayMode and Enqueuer for the relay.)
 - [x] 10. `LumberjackConfig`. (Severity, FileAppenderConfig.)
-- [ ] 11. `Snapshot`. (Severity, Enqueuer.)
+- [x] 11. `Snapshot`. (Severity, Enqueuer.)
 
 ## Phase 4 - Pure support VIs
 
 *Unit tests (Caraya) can begin as soon as each VI here exists.*
 
-- [ ] 12. Severity helpers: `RankCompare`, `LevelString`.
-- [ ] 13. Tag helpers: `DefaultSourceTag`, `Sanitize`.
-- [ ] 14. File helpers: `ISO8601FileName`, `BaseFolder`, `Prune selection`.
-- [ ] 15. Path helper: `ResolveHostRoot`. (The only place allowed to compute
+- [x] 12. Severity helpers: `RankCompare`, `LevelString`.
+- [x] 13. Tag helpers: `DefaultSourceTag`, `Sanitize`.
+- [x] 14. File helpers: `ISO8601FileName`, `BaseFolder`, `PruneSelection`
+      (`PruneSelection` groups files by baseName, then keeps the newest
+      maxFileCount per group, so different series in one folder never prune
+      against each other).
+- [x] 15. Path helper: `ResolveHostRoot`. (The only place allowed to compute
       external paths.)
 - [ ] 16. Config: `Merge` (Unflatten From JSON, baseline as default),
       `Validate`, `Resolve`. (LumberjackConfig, native JSON.)
@@ -67,8 +70,10 @@ concretes exist, before the manager or facade.*
       `Appender:HandleStatement`. (Statement, Appender.)
 - [ ] 19. `ConsoleAppender`: sink overrides. (Appender; simplest concrete,
       build first.)
-- [ ] 20. `FileAppender`: sink overrides, `OpenNewFile`, `Prune`. (Appender,
-      FileAppenderConfig, Phase-4 file helpers.)
+- [ ] 20. `FileAppender`: sink overrides, `OpenNewFile`, `Prune` (lists only its
+      own `baseName_*` files before calling `PruneSelection`, so it never
+      touches another appender's logs). (Appender, FileAppenderConfig, Phase-4
+      file helpers.)
 - [ ] 21. `RelayAppender`: `Write` sends `LogStatementMsg` or enqueues,
       `GetRelayQueue`. (Appender, RelayAppenderConfig, LogStatementMsg.)
 
@@ -115,3 +120,24 @@ concretes exist, before the manager or facade.*
 - [ ] After Phase 5: an appender can be launched with a capture probe to verify
       delivery, threshold, and filter before the manager and facade exist.
 - [ ] After Phase 7: end-to-end singleton and instance calling styles verified.
+
+---
+
+## Future / backlog (post-1.0)
+
+These are deferred enhancements, not part of the initial build, and they sit on
+the configuration-input side (parsing config at Initialize), not the layout
+side (formatting log output). See the note below.
+
+- [ ] F1. `ConfigReader` strategy: an abstract reader (parse a file into a
+      LumberjackConfig override), with the current native-JSON path refactored
+      into a `JSONConfigReader`; select the reader by file extension in
+      `Resolve`. (Item 16.)
+- [ ] F2. `INIConfigReader` (native Config File VIs) and `XMLConfigReader`
+      (native LabVIEW XML). (F1.)
+- [ ] F3. `YAMLConfigReader` - needs a third-party YAML library, so revisit
+      the zero-runtime-dependency stance (SRS DEP-1) before committing. (F1.)
+
+Note: configuration-file formats are read on input to build LumberjackConfig;
+they are not Layout subclasses (layouts format log output). A JSON config file
+and the JSONLayout are unrelated.
