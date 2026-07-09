@@ -176,7 +176,7 @@ appender shares (SRS-LMBR-029):
 - Level threshold (severity rank, SRS-LMBR-009).
 - Selection filter: mode (mirror or routed) plus criteria (level range,
   source-tag prefix) (SRS-LMBR-026).
-- Queue bound (0 = unbounded) and drop policy (SRS-LMBR-055..057).
+- Queue bound (-1 = unbounded; 0 invalid) and drop policy (SRS-LMBR-055..057).
 - Dropped-statement counter (SRS-LMBR-059).
 - Layout reference (SRS-LMBR-015).
 
@@ -271,26 +271,50 @@ matching launch input; any setting absent from the file falls back to the input
 
 ### 4.2 JSON parse, merge, validate
 
-The pipeline is implemented with native JSON primitives (SRS-LMBR-061), and the
+The pipeline uses native JSON primitives (SRS-LMBR-061). The native config
+typedefs stay native (enums, `Path`, data only); a separate string-typed DTO
+mirror is the `Unflatten From JSON` target and the merge currency, and the
 per-key merge falls out of the primitive itself:
 
-1. Build the `LumberjackConfig` cluster from the launch inputs (the baseline).
+1. Build the baseline **DTO** from defaults overlaid with the launch inputs.
+   Because launch inputs are typed, forming the baseline uses the enum-to-name
+   direction (`SeverityString` and equivalents) and renders paths as strings.
 2. If a config-file path is supplied:
    - If the file is **missing**: keep the baseline, complete launch, and return
      a non-fatal warning naming the path (SRS-LMBR-047).
    - If present: pass the file text to `Unflatten From JSON` with the baseline
-     cluster as the default-value input. Keys present in the file override; keys
+     DTO as the default-value input. Keys present in the file override; keys
      absent retain the baseline. This realizes SRS-LMBR-046 directly.
    - If the text cannot be parsed: fail launch with a descriptive error
      (SRS-LMBR-048).
-3. Validate the resolved cluster field-by-field in Lumberjack code (required
-   keys present, thresholds in 0..7, drop policy is a known enum, file
-   size/count non-negative, filter criteria well-formed). Native parsing reports
-   only generic structural errors, so field-level validation lives here and
-   names the offending setting (SRS-LMBR-048).
-4. A resource named by a valid config (root folder, path permissions) is not
+3. Validate the merged DTO field-by-field in Lumberjack code (required keys
+   present, enum names known, thresholds in range, file size/count non-negative,
+   baseName/extension filename-safe, filter criteria well-formed). Native
+   parsing reports only generic structural errors, so field-level validation
+   lives here
+   and names the offending setting (SRS-LMBR-048).
+4. Map the validated DTO to the native `LumberjackConfig`: names to enums
+   (`SeverityFromString`, `DropPolicyFromString`, `FilterModeFromString`), path
+   strings via `String To Path`. Downstream code sees only native types.
+5. A resource named by a valid config (root folder, path permissions) is not
    validated here; failure to realize it surfaces later as the appender's own
    launch error (SRS-LMBR-049).
+
+Config carries only **data**: no class objects, refnums, or DVRs, because
+`Unflatten From JSON` reconstructs a fixed value layout and cannot instantiate a
+class. The `Layout` is therefore never config; the appender constructs it at
+`InitCommon` from data fields (the `delimiter` feeds the default `CSVLayout`),
+and programmatic injection stays a code path (`CreateFileAppender`'s optional
+`layout` input). The relay consumer `Enqueuer` is handled the same way (supplied
+at creation, held in private data), so the DTO mirror is a clean 1:1 of the
+native config with no object fields to drop.
+
+Enums are serialized by **member name** in the file (for example `"INFO"`,
+`"DropOldest"`, `"Mirror"`), not by ordinal, so config is human-readable and
+survives an enum being reordered, whereas a stored ordinal would silently remap.
+This also generalizes to future INI/YAML/XML readers, which are all
+string-native, so a member name drops into any of them and they converge on the
+same name-to-enum lookup.
 
 **JSON schema shape** (resolving the SRS-deferred detail, SRS-LMBR-050). The
 file is a single object carrying global settings and the default file appender
@@ -299,14 +323,14 @@ only; it does not list appenders:
 ```json
 {
   "schemaVersion": 1,
-  "globalThreshold": 4,
+  "globalThreshold": "INFO",
   "defaultFileAppender": {
     "common": {
       "id": "default-file",
-      "threshold": 4,
-      "filter": { "mode": "mirror" },
-      "queueBound": 0,
-      "dropPolicy": "dropOldest"
+      "threshold": "INFO",
+      "filter": { "mode": "Mirror" },
+      "queueBound": -1,
+      "dropPolicy": "DropOldest"
     },
     "rootFolder": "",
     "baseName": "",
@@ -442,15 +466,15 @@ constructing its `CSVLayout` with that delimiter.
 - **Naming:** each file name is an optional `baseName` prefix plus an ISO 8601
   timestamp (colons removed; UTC or local per `useUTC`), so a new file never
   overwrites a prior one and names sort chronologically (SRS-LMBR-035).
-- **Rollover:** before a write that would exceed the configured maximum size,
-  the current file is closed and a new timestamped file is opened
-  (SRS-LMBR-033).
+- **Rollover:** when a write would exceed `maxFileSize`, the current file is
+  closed and a new timestamped file is opened; `maxFileSize = -1` disables size
+  rollover (unbounded file), and `0` is invalid (SRS-LMBR-033).
 - **Retention:** after a rollover, retention is applied per base-name series:
   within each `baseName`, the oldest files beyond the maximum count are
-  deleted; a maximum of 0 means never delete (SRS-LMBR-034). Grouping by base
-  name keeps series with different base names (or a shared root folder) from
-  pruning against each other; the appender also lists only its own
-  `baseName_*` files before selecting.
+  deleted; a maximum of `-1` means never delete (keep all), and `0` is invalid
+  (SRS-LMBR-034). Grouping by base name keeps series with different base names
+  (or a shared root folder) from pruning against each other; the appender also
+  lists only its own `baseName_*` files before selecting.
 - **Calendar tree:** when enabled, files are placed in a dated sub-folder
   hierarchy under the root folder, based on creation date (SRS-LMBR-036).
 - Each of these settings is per-instance, so multiple file appenders write to
@@ -619,10 +643,11 @@ lumberjack/
         JSONLayout.lvclass/
         TextLayout.lvclass/
     Messages/                one class per message
-    Types/                   typedef controls
+    TypeDefs/                typedef controls
+      ConfigDTO/             string DTO mirrors
     Support/                 internal helpers:
-      Config/  File/  Tag/
-      Path/  Store/  Severity/
+      Config/  Enum/  File/
+      Path/  Severity/  Store/  Tag/
   examples/
   tests/                     Unit/ Integration/ Support/
   scripts/                   Build, Build PPL, Package, Test
@@ -640,8 +665,8 @@ are in the Message and Class Reference. This tree shows layout only.
 | Appender base and concretes | `src/Core/Appender.lvclass/`, `src/Core/Appenders/` | base community; `Init` public, sink members protected |
 | Layouts | `src/Core/Layouts/` | `Create` public, `Format` public DD |
 | Messages | `src/Messages/` | community/private (internal transport) |
-| Type definitions | `src/Types/` | public where they cross the API (Severity, config clusters, Filter); private otherwise (Snapshot) |
-| Pure helpers (Severity, Tag, File) | `src/Support/Severity`, `Tag`, `File` | community (test library is a friend), off the public PPL surface |
+| Type definitions | `src/TypeDefs/` | public where they cross the API (Severity, config clusters, Filter); private otherwise (Snapshot) |
+| Pure helpers (Severity, Enum, Tag, File) | `src/Support/Severity`, `Enum`, `Tag`, `File` | community (test library is a friend), off the public PPL surface |
 | Store and Path helpers | `src/Support/Store`, `Path` | private |
 
 Two placements tie to earlier decisions: the singleton process store is isolated

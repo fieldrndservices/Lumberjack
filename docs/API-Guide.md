@@ -172,14 +172,14 @@ the default file appender only; additional appenders are added in code (section
 ```json
 {
   "schemaVersion": 1,
-  "globalThreshold": 4,
+  "globalThreshold": "INFO",
   "defaultFileAppender": {
     "common": {
       "id": "default-file",
-      "threshold": 4,
-      "filter": { "mode": "mirror" },
-      "queueBound": 0,
-      "dropPolicy": "dropOldest"
+      "threshold": "INFO",
+      "filter": { "mode": "Mirror" },
+      "queueBound": -1,
+      "dropPolicy": "DropOldest"
     },
     "rootFolder": "",
     "baseName": "",
@@ -216,10 +216,10 @@ configuration with the appender type.
 
 - **Inputs:** `id`, `threshold` *(opt, default = inherit sensible)*, `filter`
   *(opt, default mirror)*, `base name` *(opt, "")*, `root folder`,
-  `max file size` *(opt)*, `max file count` *(opt, 0 = keep all)*, `extension`
+  `max file size` *(opt)*, `max file count` *(opt, -1 = keep all)*, `extension`
   *(opt, "csv")*, `delimiter` *(opt, ",")*, `calendar folder tree?` *(opt)*,
-  `use UTC?` *(opt)*, `queue bound` *(opt, 0 = unbounded)*, `drop policy` *(opt,
-  drop-oldest)*, `layout` *(opt, CSV)*.
+  `use UTC?` *(opt)*, `queue bound` *(opt, -1 = unbounded)*,
+  `drop policy` *(opt, drop-oldest)*, `layout` *(opt, CSV)*.
 - **Output:** `appender out` (an Appender object).
 
 ### 7.2 Create a ConsoleAppender

@@ -261,12 +261,14 @@ Notation: each requirement has an ID, a statement, and a lineage tag.
   concurrently.
 - **SRS-LMBR-033 [P]** Each file appender shall roll over to a new file when its
   current file exceeds a per-instance configurable maximum size (Logger's
-  `Configure Maximum File Size`, now per instance).
+  `Configure Maximum File Size`, now per instance). A maximum size of `-1` shall
+  disable size rollover (unbounded file); `0` shall be invalid.
 - **SRS-LMBR-034 [P]** Each file appender shall retain at most a per-instance
   configurable maximum number of files, deleting the oldest on rollover; a value
-  of 0 shall mean never delete (Logger's `Configure Maximum File Count`, now per
-  instance). Retention shall be applied per base-name series: files with
-  differing base names in one folder shall not be pruned against each other.
+  of `-1` shall mean never delete (keep all) and `0` shall be invalid (Logger's
+  `Configure Maximum File Count`, now per instance). Retention shall be applied
+  per base-name series: files with differing base names in one folder shall not
+  be pruned against each other.
 - **SRS-LMBR-035 [P]** Every log file name shall include an ISO 8601 timestamp
   to prevent overwriting prior logs, regardless of folder organization. The name
   shall be an optional configurable base-name prefix followed by the timestamp
@@ -352,6 +354,13 @@ messages thereafter.
   array) open without a format change. A developer adding appenders
   programmatically may source their values from the same file or elsewhere at
   their discretion.
+- **SRS-LMBR-050a [N]** In the configuration file, enumerated settings shall be
+  represented by their member name as a string (for example `"INFO"`,
+  `"DropOldest"`), not by numeric ordinal, so configuration is human-readable
+  and remains stable if an enumeration is reordered. Path-valued settings shall
+  likewise be represented as strings. Unknown enum names shall be rejected with
+  a descriptive validation error (SRS-LMBR-048), and strings shall be converted
+  to their typed forms during resolution (SRS-LMBR-051).
 - **SRS-LMBR-051 [N]** The resolved effective configuration (inputs merged with
   any valid file per SRS-LMBR-046) shall be the single configuration the root
   actor uses to launch appenders and establish thresholds and filters. The
@@ -369,12 +378,13 @@ messages thereafter.
   delivered in the order received. (Cross-appender ordering is not guaranteed
   once queues drain concurrently — a consequence of SRS-LMBR-022.)
 - **SRS-LMBR-055 [P]** Each appender's inbound queue shall be unbounded by
-  default, matching Logger's default `Maximum Messages` of -1 (memory-limited).
-  In this mode no statement is lost; the documented risk is unbounded memory
-  growth if a sink is persistently slower than production.
+  default, matching Logger's default `Maximum Messages` of `-1`
+  (memory-limited). A queue bound of `-1` shall mean unbounded; `0` shall be
+  invalid. In the unbounded mode no statement is lost; the documented risk is
+  unbounded memory growth if a sink is persistently slower than production.
 - **SRS-LMBR-056 [C]** Each appender shall optionally be given a bounded queue
-  capacity (maximum queued statements), configured per appender. This
-  generalizes Logger's single global `Maximum Messages` to a per-appender
+  capacity (a positive maximum of queued statements), configured per appender.
+  This generalizes Logger's single global `Maximum Messages` to a per-appender
   setting and is the intended mode for Real-Time and embedded targets, where it
   also bounds memory and jitter (see SRS-LMBR-003, SRS-LMBR-053).
 - **SRS-LMBR-057 [N]** When a bounded appender queue is full, the default policy

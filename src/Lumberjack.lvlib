@@ -14,10 +14,25 @@
 	</Item>
 	<Item Name="Support" Type="Folder">
 		<Item Name="Config" Type="Folder">
+			<Item Name="CheckSchemaVerions.vi" Type="VI" URL="../Support/Config/CheckSchemaVerions.vi"/>
 			<Item Name="Merge.vi" Type="VI" URL="../Support/Config/Merge.vi"/>
+			<Item Name="Resolve.vi" Type="VI" URL="../Support/Config/Resolve.vi"/>
+			<Item Name="ValidateAppenderConfigDTO.vi" Type="VI" URL="../Support/Config/ValidateAppenderConfigDTO.vi"/>
+			<Item Name="ValidateFileAppenderConfigDTO.vi" Type="VI" URL="../Support/Config/ValidateFileAppenderConfigDTO.vi"/>
+			<Item Name="ValidateFilterDTO.vi" Type="VI" URL="../Support/Config/ValidateFilterDTO.vi"/>
+			<Item Name="ValidateLumberjackConfigDTO.vi" Type="VI" URL="../Support/Config/ValidateLumberjackConfigDTO.vi"/>
+		</Item>
+		<Item Name="Enum" Type="Folder">
+			<Item Name="DropPolicyFromString.vi" Type="VI" URL="../Support/Enum/DropPolicyFromString.vi"/>
+			<Item Name="DropPolicyString.vi" Type="VI" URL="../Support/Enum/DropPolicyString.vi"/>
+			<Item Name="FilterModeFromString.vi" Type="VI" URL="../Support/Enum/FilterModeFromString.vi"/>
+			<Item Name="FilterModeString.vi" Type="VI" URL="../Support/Enum/FilterModeString.vi"/>
+			<Item Name="SeverityFromString.vi" Type="VI" URL="../Support/Enum/SeverityFromString.vi"/>
+			<Item Name="SeverityString.vi" Type="VI" URL="../Support/Enum/SeverityString.vi"/>
 		</Item>
 		<Item Name="File" Type="Folder">
 			<Item Name="BaseFolder.vi" Type="VI" URL="../Support/File/BaseFolder.vi"/>
+			<Item Name="IsFileNameSafe.vi" Type="VI" URL="../Support/File/IsFileNameSafe.vi"/>
 			<Item Name="ISO8601FileName.vi" Type="VI" URL="../Support/File/ISO8601FileName.vi"/>
 			<Item Name="PruneSelection.vi" Type="VI" URL="../Support/File/PruneSelection.vi"/>
 		</Item>
@@ -25,7 +40,6 @@
 			<Item Name="ResolveHostRoot.vi" Type="VI" URL="../Support/Path/ResolveHostRoot.vi"/>
 		</Item>
 		<Item Name="Severity" Type="Folder">
-			<Item Name="LevelString.vi" Type="VI" URL="../Support/Severity/LevelString.vi"/>
 			<Item Name="RankCompare.vi" Type="VI" URL="../Support/Severity/RankCompare.vi"/>
 		</Item>
 		<Item Name="Store" Type="Folder"/>
