@@ -88,19 +88,23 @@ and returns an instance.
   - `global threshold` *(opt, default INFO=4)*: stage-1 coarse threshold
     (SRS-LMBR-007, 012).
   - `default file config` *(opt)*: a FileAppender config for the default file
-    (root folder, max size, max count, extension, delimiter, calendar tree).
-    Defaults give a CSV file with calendar folders and size-based rollover.
+    (base name, root folder, max size, max count, extension, delimiter, calendar
+    tree, UTC). Defaults give a CSV file with calendar folders and size-based
+    rollover.
   - `disable default file?` *(opt, default FALSE)*: when TRUE, no default file
     appender is launched (SRS-LMBR-038).
   - `config file path` *(opt)*: JSON configuration file (section 6). When
     supplied and valid, its values override the inputs per key.
   - `host application path` *(opt)*: the host application's directory, used to
     resolve relative paths safely under a PPL (section 10, SRS-LMBR-064).
+    Required when running as a built application (see below).
 - **Outputs:**
   - `logger out`: the `Logger` instance (also stored as the process default).
   - `error out`: carries a non-fatal **warning** if a supplied config file path
-    was missing (SRS-LMBR-047), or a fatal **error** if the file was present but
-    invalid (SRS-LMBR-048).
+    was missing (SRS-LMBR-047); a fatal **error** if the file was present but
+    invalid (SRS-LMBR-048); or a fatal **error 5000** if a relative or empty log
+    root must be resolved but no `host application path` was supplied while
+    running as a built application (SRS-LMBR-064, section 12).
 
 ### 3.2 Shutdown
 
@@ -168,21 +172,23 @@ the default file appender only; additional appenders are added in code (section
 ```json
 {
   "schemaVersion": 1,
-  "globalThreshold": 4,
+  "globalThreshold": "INFO",
   "defaultFileAppender": {
     "common": {
       "id": "default-file",
-      "threshold": 4,
-      "filter": { "mode": "mirror" },
-      "queueBound": 0,
-      "dropPolicy": "dropOldest"
+      "threshold": "INFO",
+      "filter": { "mode": "Mirror" },
+      "queueBound": -1,
+      "dropPolicy": "DropOldest"
     },
     "rootFolder": "",
+    "baseName": "",
     "maxFileSize": 10485760,
     "maxFileCount": 10,
     "extension": "csv",
     "delimiter": ",",
-    "calendarFolderTree": true
+    "calendarFolderTree": true,
+    "useUTC": true
   }
 }
 ```
@@ -209,11 +215,11 @@ configuration with the appender type.
 `CreateFileAppender` returns a configured (not yet launched) appender object.
 
 - **Inputs:** `id`, `threshold` *(opt, default = inherit sensible)*, `filter`
-  *(opt, default mirror)*, `root folder`, `max file size` *(opt)*,
-  `max file count` *(opt, 0 = keep all)*, `extension` *(opt, "csv")*,
-  `delimiter` *(opt, ",")*, `calendar folder tree?` *(opt)*, `queue bound`
-  *(opt, 0 = unbounded)*, `drop policy` *(opt, drop-oldest)*, `layout` *(opt,
-  CSV)*.
+  *(opt, default mirror)*, `base name` *(opt, "")*, `root folder`,
+  `max file size` *(opt)*, `max file count` *(opt, -1 = keep all)*, `extension`
+  *(opt, "csv")*, `delimiter` *(opt, ",")*, `calendar folder tree?` *(opt)*,
+  `use UTC?` *(opt)*, `queue bound` *(opt, -1 = unbounded)*,
+  `drop policy` *(opt, drop-oldest)*, `layout` *(opt, CSV)*.
 - **Output:** `appender out` (an Appender object).
 
 ### 7.2 Create a ConsoleAppender
@@ -371,6 +377,14 @@ correct:
 - If you use relative paths or an empty `rootFolder` default, wire
   `host application path` into `Initialize` so defaults resolve against your
   application's directory, not a location inside the PPL.
+
+When running as a **built application**, wiring `host application path` is not
+just advisable but required for the relative/empty-root case: `Initialize`
+returns a fatal **error 5000** if it must resolve such a root and no host path
+was supplied. This is deliberate, in a built app the executable folder is often
+read-only (Program Files under UAC), so Lumberjack refuses to guess rather than
+write somewhere that silently fails. In the development system it falls back to
+the application directory, so the error only surfaces in a deployed build.
 
 Lumberjack itself never derives external paths from its own VI location.
 

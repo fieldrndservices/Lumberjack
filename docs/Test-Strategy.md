@@ -93,6 +93,17 @@ well; the strategy below is framework-neutral and would port.
   creation, a test can inject a trivial identity layout or a known filter to
   remove formatting and selection variance from an assertion.
 
+To keep the pure-VI seam usable, the pure support helpers (`src/Support/`
+Severity, Enum, Tag, and File: rank comparison, enum name/string conversion, tag
+defaulting and sanitization, ISO 8601 filename building, base-folder
+computation, and prune selection) are scoped **community**, and the test library
+(`tests/Tests.lvlib`)
+is declared a **friend** of `Lumberjack.lvlib`. That lets the unit tests call
+these helpers directly while keeping them off the public (PPL-exported) surface,
+so adopters still cannot. The stateful/constrained helpers, Store
+(`SetProcessDefault`/`GetProcessDefault`) and Path (`ResolveHostRoot`), stay
+**private** and are exercised through behavior rather than called directly.
+
 ### 3.4 Fixtures
 
 - **Temp root fixture** (SetUp/TearDown): create a unique temporary root folder
@@ -164,6 +175,9 @@ the requirements it covers.
 | Missing file | defined path, missing file, returns non-fatal warning, continues | U | 047 |
 | Invalid file | present but unparseable/invalid fails launch with a descriptive error | U | 048 |
 | Field validation | out-of-range threshold, bad enum, negative size each named in the error | U | 048 |
+| Enum name membership | unknown Severity/DropPolicy/FilterMode name is rejected with the accepted set listed | U | 048 |
+| Bounded values | maxFileSize/maxFileCount/queueBound accept -1 (unbounded) and positive; reject 0 and < -1 | U | 033, 034, 056 |
+| Schema version | schemaVersion accepted by set membership; a non-member is rejected | U | 048 |
 | Resolve once | effective config computed once at launch | U/I | 051 |
 
 ### 4.5 Appenders and broadcast
@@ -181,9 +195,13 @@ the requirements it covers.
 
 | Case | Assertion | Tier | SRS |
 |---|---|---|---|
-| ISO filename | each file name embeds an ISO 8601 timestamp | U/I | 035 |
+| ISO filename | each file name embeds an ISO 8601 timestamp (colons removed) | U/I | 035 |
+| Base name prefix | non-empty baseName yields `baseName_<timestamp>.<ext>`; empty yields timestamp-only | U | 035 |
+| Extension normalize | "csv" and ".csv" both yield one dot; empty extension yields no trailing dot | U | 035 |
+| UTC frame agreement | useUTC selects one frame for file name, calendar folder, and timestamp column together | U | 011, 035, 036 |
 | Rollover on size | exceeding max size opens a new file | I | 033 |
-| Retention prune | files beyond max count are pruned oldest-first; 0 keeps all | U/I | 034 |
+| Retention prune | files beyond max count are pruned oldest-first; -1 keeps all | U/I | 034 |
+| Per-series prune | files with different base names in one folder are pruned independently, not against each other | U | 034 |
 | Calendar tree | files placed in dated sub-folders when enabled | I | 036 |
 
 ### 4.7 Relay appender
@@ -220,6 +238,7 @@ the requirements it covers.
 |---|---|---|---|
 | Explicit root honored | a supplied root folder is used verbatim | U | 039, 064 |
 | Host-context default | empty root resolves against host app context, not the library path | U | 064 |
+| Built-app requires path | with no host path and Application.Kind = Run Time System, resolution faults with error 5000 | U | 064 |
 | No self-derived paths | no library VI derives an external path from its own VI path | U (inspection) | 064 |
 
 ---

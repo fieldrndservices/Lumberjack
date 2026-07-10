@@ -28,8 +28,23 @@ Notation:
 
 ## 2. Type definitions (data)
 
-These are typedef controls, not classes. They cross the API boundary and the
-JSON boundary, so they are plain data.
+These are typedef controls, not classes. The config typedefs (Filter,
+AppenderConfig, FileAppenderConfig, RelayAppenderConfig, LumberjackConfig) are
+**native**: enums are the real enum types, paths are `Path`, and they carry only
+data, no class objects, refnums, or DVRs. Native typedefs keep the runtime code
+readable (unbundling `threshold` yields a real `Severity`).
+
+**Config JSON boundary (the DTO).** Because `Unflatten From JSON` cannot
+populate enums from names, populate a `Path`, or instantiate a class, the JSON
+file is parsed into a separate **string-typed DTO mirror** of the config (see
+2.11), not into the native typedefs. In the file, every enum is written by
+member name (for example `"INFO"`, `"DropOldest"`) and every path as a string,
+so config is human-readable and stable if an enum is ever reordered. `Resolve`
+maps the DTO to the native config: names to enums via per-enum lookups
+(unknown name = descriptive error, SRS-LMBR-048), path strings via
+`String To Path`. Objects that are not data (Layout, consumer Enqueuer) are not
+config at all; they are supplied at appender creation and held in appender
+private data.
 
 ### 2.1 Severity (enum)
 Values, in rank order: `FATAL (1)`, `ERROR (2)`, `WARN (3)`, `INFO (4)`,
@@ -48,53 +63,77 @@ One log record (SRS-LMBR-010).
 | message | String | the only user-defined field |
 
 ### 2.3 Filter (cluster)
-Per-appender selection filter (SRS-LMBR-026, 027).
+Per-appender selection filter (SRS-LMBR-026, 027). Native types; the JSON form
+is `FilterDTO` (2.11).
 
 | Field | Type | Notes |
 |---|---|---|
-| mode | FilterMode enum (`mirror`, `routed`) | mirror accepts all above threshold |
+| mode | FilterMode enum (`Mirror`, `Routed`) | Mirror accepts all above threshold |
 | levelMin / levelMax | Severity | routed level range |
 | tagPrefix | String | routed hierarchical prefix; empty = any |
 
 ### 2.4 DropPolicy (enum)
-`dropOldest` (default), `dropNewest`, `levelAware` (SRS-LMBR-057).
+`DropOldest` (default), `DropNewest`, `LevelAware` (SRS-LMBR-057).
 
 ### 2.5 RelayMode (enum)
-`message` (default), `queue` (SRS-LMBR-024, 025).
+`Message` (default), `Queue` (SRS-LMBR-024, 025).
 
 ### 2.6 AppenderConfig (cluster, common)
 The common configuration shared by every appender (SRS-LMBR-029). Composed
-(nested) into each type-specific config.
+(nested) into each type-specific config. Native types; the JSON form is
+`AppenderConfigDTO` (2.11).
 
 | Field | Type | Notes |
 |---|---|---|
 | id | String | unique appender ID |
 | threshold | Severity | per-appender authoritative threshold (SRS-LMBR-009) |
 | filter | Filter | selection filter |
-| queueBound | U32 | 0 = unbounded (SRS-LMBR-055, 056) |
+| queueBound | I32 | -1 = unbounded; 0 invalid; positive = bound (SRS-LMBR-055, 056) |
 | dropPolicy | DropPolicy | applies when bounded (SRS-LMBR-057) |
-| layout | Layout | formatting strategy (SRS-LMBR-015) |
+
+The Layout is **not** a config field (config carries only data): the appender
+constructs its Layout at `InitCommon` from data fields (the `delimiter` feeds
+the default `CSVLayout`), and programmatic injection uses `CreateFileAppender`'s
+optional `layout` input (SRS-LMBR-015, SDD 4.2).
 
 ### 2.7 FileAppenderConfig (cluster)
-`AppenderConfig` (nested as `common`) plus: `rootFolder` (Path),
-`maxFileSize` (U64), `maxFileCount` (U32, 0 = keep all), `extension`
-(String), `delimiter` (String), `calendarFolderTree` (Bool) (SRS-LMBR-030,
-032-040).
+`AppenderConfig` (nested as `common`) plus: `baseName` (String, opt),
+`rootFolder` (Path), `maxFileSize` (I64), `maxFileCount` (I32),
+`extension` (String), `delimiter` (String), `calendarFolderTree` (Bool),
+`useUTC` (Bool) (SRS-LMBR-030, 032-040).
+
+`maxFileSize`, `maxFileCount`, and `queueBound` share one bounded-value
+convention: a positive value is the limit, `-1` disables the limit (unbounded
+file size / keep all files / unbounded queue), and `0` (or any value below `-1`)
+is invalid and rejected by `Validate`. Bounded is the normal case; `-1` is an
+explicit escape hatch left to the deploying developer.
+
+`baseName` is an optional filename prefix (empty = timestamp-only names).
+`useUTC` selects the time frame (UTC vs local) for the file name, the calendar
+folder, and the layout's timestamp column together, so all three agree.
+
+`rootFolder` is a native `Path`. In the JSON DTO it appears as a String (Paths
+are not JSON-serializable); `Resolve` converts it with `String To Path` and
+resolves an empty or relative value against the host root (empty = "resolve
+against the host root") (SDD 4.2, 6).
 
 `delimiter` is a formatting concern owned by the layout; the file appender feeds
 this value into the `CSVLayout` it constructs, so it is not an independent
 setting (SDD 5.4).
 
 ### 2.8 RelayAppenderConfig (cluster)
-`AppenderConfig` plus: `mode` (RelayMode) and, for message mode,
-`consumerEnqueuer` (Enqueuer).
+`AppenderConfig` plus `mode` (RelayMode). Native types; not read from JSON
+(relay appenders are created programmatically). Per P1, the consumer `Enqueuer`
+used in message mode is **not** config: it is supplied at appender creation and
+held in the appender's private data, so no object lives in this cluster.
 
 ### 2.9 LumberjackConfig (cluster)
-The `Initialize` / JSON boundary object (SRS-LMBR-050).
+The `Initialize` boundary object (SRS-LMBR-050). Native types; the JSON form is
+`LumberjackConfigDTO` (2.11).
 
 | Field | Type |
 |---|---|
-| schemaVersion | U16 |
+| schemaVersion | String (canonical 00.00.01 form) |
 | globalThreshold | Severity |
 | defaultFileAppender | FileAppenderConfig |
 
@@ -106,9 +145,23 @@ The Notifier payload broadcast to callers (SDD 2.1).
 | globalThreshold | Severity | stage-1 coarse threshold |
 | appenderEnqueuers | Array of Enqueuer | current broadcast targets |
 
----
+### 2.11 Config DTO (JSON unflatten target)
+For each native config cluster there is a string-typed mirror used only as the
+`Unflatten From JSON` target and merge currency: `FilterDTO`,
+`AppenderConfigDTO`, `FileAppenderConfigDTO`, `LumberjackConfigDTO`. The mirror
+is field-for-field identical to the native cluster except that every enum field
+is a String (member name) and every `Path` field is a String. Because the
+native config carries no objects or handles (P1), the mirror is a clean 1:1
+correspondence with no dropped fields.
 
-## 3. Classes
+`Merge` operates on the DTO (native `Unflatten From JSON` with the baseline DTO
+as the default value gives per-key override); `Validate` checks the DTO (known
+enum names, ranges, filename safety); `Resolve` then maps the validated DTO to
+the native `LumberjackConfig` (names to enums, path strings via `String To
+Path`). Building the baseline DTO from typed launch inputs uses the enum-to-name
+direction (`SeverityString`, `DropPolicyString`, `FilterModeString`); mapping
+the result back to native uses the name-to-enum direction (`SeverityFromString`,
+`DropPolicyFromString`, `FilterModeFromString`).
 
 ### 3.1 Logger.lvclass
 By-value caller facade. Wraps the shared references and provides the public API.
@@ -183,7 +236,7 @@ Writes statements to rolling, retained log files.
 | CloseSink | protected | override | Flush and close the current file. |
 | Configure | protected | override | Extend base Configure with file-specific fields (per-instance, SRS-LMBR-039, 040). |
 | OpenNewFile | private | static | Open a new timestamped file and reset the size counter. |
-| Prune | private | static | Delete oldest files beyond `maxFileCount` (0 = keep all). |
+| Prune | private | static | List this appender's own `baseName_*` files across the root (and any calendar sub-folders), then delete oldest beyond `maxFileCount` via `PruneSelection` (grouped per base name); -1 = keep all. |
 
 ### 3.5 ConsoleAppender.lvclass
 Writes formatted lines to the console/standard output.
