@@ -85,7 +85,7 @@ or the reason for the position.
 *Integration tests via a console or relay-queue capture probe can begin once the
 concretes exist, before the manager or facade.*
 
-- [ ] 17. `Appender.lvclass` (Actor subclass): `InitCommon`, `GetID`,
+- [x] 17. `Appender.lvclass` (Actor subclass): `InitCommon`, `GetID`,
       `HandleStatement`, abstract `OpenSink`/`Write`/`CloseSink` (DD),
       `Actor Core`. (Phases 1-3.)
 - [ ] 18. `LogStatementMsg`: payload `Statement`; `Do.vi` calls
@@ -101,6 +101,15 @@ concretes exist, before the manager or facade.*
       (Appender, FileAppenderConfig, Phase-4 file helpers.)
 - [ ] 21. `RelayAppender`: `Write` sends `LogStatementMsg` or enqueues,
       `GetRelayQueue`. (Appender, RelayAppenderConfig, LogStatementMsg.)
+- [ ] 21a. Backpressure increment (Option B, deferred from item 17): add an
+      internal bounded intake buffer to `Appender` private data, engaged only
+      when `queueBound > 0` (`-1` bypasses it). `LogStatementMsg:Do` enqueues
+      into the buffer; on full, apply `dropPolicy` via a pure `DropSelect`
+      helper (community, unit-testable) and increment `droppedCount`.
+      `Actor Core` drains the buffer into `HandleStatement`. `EmitDropNotice`
+      (private) writes the synthetic "N statements dropped" record when
+      `droppedCount` grows. Option B chosen because level-aware dropping needs
+      to own the buffer. (Appender, LogStatementMsg; SRS-LMBR-055-059.)
 
 ## Phase 6 - Root actor and control messages
 

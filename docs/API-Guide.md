@@ -171,7 +171,7 @@ the default file appender only; additional appenders are added in code (section
 
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": "00.00.01",
   "globalThreshold": "INFO",
   "defaultFileAppender": {
     "common": {

@@ -213,7 +213,7 @@ specifics to subclasses (SRS-LMBR-018).
 |---|---|---|---|
 | InitCommon | protected | static | Set the common private data from an `AppenderConfig` (called by each subclass init, SRS-LMBR-031). |
 | GetID | community | static | Return the appender ID (used by the manager's registry/unregister). |
-| HandleStatement | protected | static | Apply the appender threshold then the Filter; if accepted, format via `layout` and call `Write`; enforce backpressure on intake (SRS-LMBR-009, 026, 055-059). |
+| HandleStatement | protected | static | Apply the appender threshold (RankCompare) then the Filter (mirror, or routed via `RoutedFilterMatch`); if accepted, call the DD `Write` with the `Statement`. Does not format (Write does) and does not enforce backpressure (that is the Actor Core intake path) (SRS-LMBR-009, 026, 027). |
 | OpenSink | protected | **DD** *(must override)* | Open the sink resource on actor startup. |
 | Write | protected | **DD** *(must override)* | Write one formatted, accepted line to the sink. |
 | CloseSink | protected | **DD** *(must override)* | Flush and close the sink on stop. |
@@ -298,8 +298,8 @@ All extend `Message.lvclass` and override `Do.vi`. Each has an auto-generated
 ### 4.1 LogStatementMsg (data plane)
 - **Direction:** caller (via `Logger.Log`) to each appender enqueuer.
 - **Payload:** `Statement`.
-- **Do.vi:** call the receiving `Appender`'s `HandleStatement` (threshold,
-  filter, format, write) (SRS-LMBR-019).
+- **Do.vi:** runs on the receiving appender; call its `HandleStatement`
+  (threshold, then filter; on accept, the DD `Write`) (SRS-LMBR-019).
 
 ### 4.2 RegisterAppenderMsg (control plane)
 - **Direction:** caller to LogManager.

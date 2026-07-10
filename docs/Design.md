@@ -322,7 +322,7 @@ only; it does not list appenders:
 
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": "00.00.01",
   "globalThreshold": "INFO",
   "defaultFileAppender": {
     "common": {
@@ -632,8 +632,8 @@ lumberjack/
       Logger.lvclass/        API facade
     Core/
       LogManager.lvclass/   root actor
-      Appender.lvclass/      abstract base
       Appenders/
+        Appender.lvclass/    abstract base
         FileAppender.lvclass/
         ConsoleAppender.lvclass/
         RelayAppender.lvclass/
@@ -646,8 +646,9 @@ lumberjack/
     TypeDefs/                typedef controls
       ConfigDTO/             string DTO mirrors
     Support/                 internal helpers:
-      Config/  Enum/  File/
-      Path/  Severity/  Store/  Tag/
+      Config/  Config/Mapping/  Enum/
+      Filter/  File/  Path/
+      Severity/  Store/  Tag/
   examples/
   tests/                     Unit/ Integration/ Support/
   scripts/                   Build, Build PPL, Package, Test
@@ -666,7 +667,8 @@ are in the Message and Class Reference. This tree shows layout only.
 | Layouts | `src/Core/Layouts/` | `Create` public, `Format` public DD |
 | Messages | `src/Messages/` | community/private (internal transport) |
 | Type definitions | `src/TypeDefs/` | public where they cross the API (Severity, config clusters, Filter); private otherwise (Snapshot) |
-| Pure helpers (Severity, Enum, Tag, File) | `src/Support/Severity`, `Enum`, `Tag`, `File` | community (test library is a friend), off the public PPL surface |
+| Pure helpers (Severity, Enum, Tag, File, Filter) | `src/Support/Severity`, `Enum`, `Tag`, `File`, `Filter` | community (test library is a friend), off the public PPL surface |
+| Config (Merge, Validate, Resolve, mappers) | `src/Support/Config`, `Config/Mapping` | community (test library is a friend), off the public PPL surface |
 | Store and Path helpers | `src/Support/Store`, `Path` | private |
 
 Two placements tie to earlier decisions: the singleton process store is isolated

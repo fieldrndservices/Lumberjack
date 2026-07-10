@@ -94,10 +94,11 @@ well; the strategy below is framework-neutral and would port.
   remove formatting and selection variance from an assertion.
 
 To keep the pure-VI seam usable, the pure support helpers (`src/Support/`
-Severity, Enum, Tag, and File: rank comparison, enum name/string conversion, tag
-defaulting and sanitization, ISO 8601 filename building, base-folder
-computation, and prune selection) are scoped **community**, and the test library
-(`tests/Tests.lvlib`)
+Severity, Enum, Tag, File, Filter, and Config: rank comparison, enum name/string
+conversion, tag defaulting and sanitization, ISO 8601 filename building,
+base-folder computation, prune selection, routed-filter matching, and config
+merge/validate/resolve with the native/DTO mappers) are scoped **community**,
+and the test library (`tests/Tests.lvlib`)
 is declared a **friend** of `Lumberjack.lvlib`. That lets the unit tests call
 these helpers directly while keeping them off the public (PPL-exported) surface,
 so adopters still cannot. The stateful/constrained helpers, Store
@@ -155,8 +156,9 @@ the requirements it covers.
 | Global coarse gate | statement above global threshold is not fanned out | U/I | 007, 012 |
 | Per-appender threshold | appender writes only statements passing its own threshold | I | 009 |
 | Mirror mode | accepts everything above threshold | U | 026 |
-| Routed level range | accepts only within min..max rank | U | 026 |
-| Tag prefix match | `app.db` matches `app.db` and `app.db.query`, not `app.database` | U | 027 |
+| Routed level range | accepts only within the inclusive rank band [levelMin, levelMax] (log4j LevelRangeFilter semantics: levelMin most severe, levelMax least severe) | U | 026 |
+| Routed single level | levelMin == levelMax accepts exactly that one level | U | 026 |
+| Tag prefix match | `app.db` matches `app.db` and `app.db.query`, not `app.database` (dot-boundary, via `RoutedFilterMatch`) | U | 027 |
 
 ### 4.3 Source tag
 
