@@ -200,7 +200,7 @@ the requirements it covers.
 | ISO filename | each file name embeds an ISO 8601 timestamp (colons removed) | U/I | 035 |
 | Base name prefix | non-empty baseName yields `baseName_<timestamp>.<ext>`; empty yields timestamp-only | U | 035 |
 | Extension normalize | "csv" and ".csv" both yield one dot; empty extension yields no trailing dot | U | 035 |
-| UTC frame agreement | useUTC selects one frame for file name, calendar folder, and timestamp column together | U | 011, 035, 036 |
+| UTC frame agreement | within one appender, useUTC frames its file name, calendar folder, and layout line timestamp identically; appenders may differ (e.g. local console + UTC file) | U | 011, 035, 036 |
 | Rollover on size | exceeding max size opens a new file | I | 033 |
 | Retention prune | files beyond max count are pruned oldest-first; -1 keeps all | U/I | 034 |
 | Per-series prune | files with different base names in one folder are pruned independently, not against each other | U | 034 |

@@ -179,16 +179,18 @@ the default file appender only; additional appenders are added in code (section
       "threshold": "INFO",
       "filter": { "mode": "Mirror" },
       "queueBound": -1,
-      "dropPolicy": "DropOldest"
+      "dropPolicy": "DropOldest",
+      "useUTC": true
     },
-    "rootFolder": "",
-    "baseName": "",
-    "maxFileSize": 10485760,
-    "maxFileCount": 10,
-    "extension": "csv",
-    "delimiter": ",",
-    "calendarFolderTree": true,
-    "useUTC": true
+    "file": {
+      "rootFolder": "",
+      "baseName": "",
+      "maxFileSize": 10485760,
+      "maxFileCount": 10,
+      "extension": "csv",
+      "delimiter": ",",
+      "calendarFolderTree": true
+    }
   }
 }
 ```

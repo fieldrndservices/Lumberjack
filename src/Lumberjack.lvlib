@@ -6,7 +6,16 @@
 	<Property Name="NI.LV.All.SourceOnly" Type="Bool">true</Property>
 	<Item Name="Core" Type="Folder">
 		<Item Name="Appenders" Type="Folder">
-			<Item Name="Appender.lvclass" Type="LVClass" URL="../Core/Appenders/Appender.lvclass2/Appender.lvclass">
+			<Item Name="Appender.lvclass" Type="LVClass" URL="../Core/Appenders/Appender.lvclass/Appender.lvclass">
+				<Property Name="NI.LibItem.Scope" Type="Int">4</Property>
+			</Item>
+			<Item Name="ConsoleAppender.lvclass" Type="LVClass" URL="../Core/Appenders/ConsoleAppender.lvclass/ConsoleAppender.lvclass">
+				<Property Name="NI.LibItem.Scope" Type="Int">4</Property>
+			</Item>
+			<Item Name="FileAppender.lvclass" Type="LVClass" URL="../Core/Appenders/FileAppender.lvclass/FileAppender.lvclass">
+				<Property Name="NI.LibItem.Scope" Type="Int">4</Property>
+			</Item>
+			<Item Name="RelayAppender.lvclass" Type="LVClass" URL="../Core/Appenders/RelayAppender.lvclass/RelayAppender.lvclass">
 				<Property Name="NI.LibItem.Scope" Type="Int">4</Property>
 			</Item>
 		</Item>
@@ -14,29 +23,41 @@
 			<Item Name="CSVLayout.lvclass" Type="LVClass" URL="../Core/Layouts/CSVLayout.lvclass/CSVLayout.lvclass">
 				<Property Name="NI.LibItem.Scope" Type="Int">4</Property>
 			</Item>
-			<Item Name="JSONLayout.lvclass" Type="LVClass" URL="../Core/Layouts/JSONLayout.lvclass/JSONLayout.lvclass"/>
-			<Item Name="Layout.lvclass" Type="LVClass" URL="../Core/Layouts/Layout.lvclass/Layout.lvclass"/>
-			<Item Name="TextLayout.lvclass" Type="LVClass" URL="../Core/Layouts/TextLayout.lvclass/TextLayout.lvclass"/>
+			<Item Name="JSONLayout.lvclass" Type="LVClass" URL="../Core/Layouts/JSONLayout.lvclass/JSONLayout.lvclass">
+				<Property Name="NI.LibItem.Scope" Type="Int">4</Property>
+			</Item>
+			<Item Name="Layout.lvclass" Type="LVClass" URL="../Core/Layouts/Layout.lvclass/Layout.lvclass">
+				<Property Name="NI.LibItem.Scope" Type="Int">4</Property>
+			</Item>
+			<Item Name="TextLayout.lvclass" Type="LVClass" URL="../Core/Layouts/TextLayout.lvclass/TextLayout.lvclass">
+				<Property Name="NI.LibItem.Scope" Type="Int">4</Property>
+			</Item>
+		</Item>
+		<Item Name="Messages" Type="Folder">
+			<Item Name="LogStatementMsg.lvclass" Type="LVClass" URL="../Core/Messages/LogStatementMsg.lvclass/LogStatementMsg.lvclass"/>
 		</Item>
 	</Item>
 	<Item Name="Support" Type="Folder">
 		<Item Name="Config" Type="Folder">
 			<Property Name="NI.LibItem.Scope" Type="Int">4</Property>
 			<Item Name="Mapping" Type="Folder">
-				<Item Name="AppenderConfigDTOFromNative.vi" Type="VI" URL="../Support/Config/AppenderConfigDTOFromNative.vi"/>
-				<Item Name="AppenderConfigFromDTO.vi" Type="VI" URL="../Support/Config/AppenderConfigFromDTO.vi"/>
-				<Item Name="FileAppenderConfigDTOFromNative.vi" Type="VI" URL="../Support/Config/FileAppenderConfigDTOFromNative.vi"/>
-				<Item Name="FileAppenderConfigFromDTO.vi" Type="VI" URL="../Support/Config/FileAppenderConfigFromDTO.vi"/>
-				<Item Name="FilterDTOFromNative.vi" Type="VI" URL="../Support/Config/FilterDTOFromNative.vi"/>
-				<Item Name="FilterFromDTO.vi" Type="VI" URL="../Support/Config/FilterFromDTO.vi"/>
-				<Item Name="LumberjackConfigDTOFromNative.vi" Type="VI" URL="../Support/Config/LumberjackConfigDTOFromNative.vi"/>
-				<Item Name="LumberjackConfigFromDTO.vi" Type="VI" URL="../Support/Config/LumberjackConfigFromDTO.vi"/>
+				<Item Name="AppenderConfigDTOFromNative.vi" Type="VI" URL="../Support/Config/Mapping/AppenderConfigDTOFromNative.vi"/>
+				<Item Name="AppenderConfigFromDTO.vi" Type="VI" URL="../Support/Config/Mapping/AppenderConfigFromDTO.vi"/>
+				<Item Name="FileAppenderConfigDTOFromNative.vi" Type="VI" URL="../Support/Config/Mapping/FileAppenderConfigDTOFromNative.vi"/>
+				<Item Name="FileAppenderConfigFromDTO.vi" Type="VI" URL="../Support/Config/Mapping/FileAppenderConfigFromDTO.vi"/>
+				<Item Name="FileConfigDTOFromNative.vi" Type="VI" URL="../Support/Config/Mapping/FileConfigDTOFromNative.vi"/>
+				<Item Name="FileConfigFromDTO.vi" Type="VI" URL="../Support/Config/Mapping/FileConfigFromDTO.vi"/>
+				<Item Name="FilterDTOFromNative.vi" Type="VI" URL="../Support/Config/Mapping/FilterDTOFromNative.vi"/>
+				<Item Name="FilterFromDTO.vi" Type="VI" URL="../Support/Config/Mapping/FilterFromDTO.vi"/>
+				<Item Name="LumberjackConfigDTOFromNative.vi" Type="VI" URL="../Support/Config/Mapping/LumberjackConfigDTOFromNative.vi"/>
+				<Item Name="LumberjackConfigFromDTO.vi" Type="VI" URL="../Support/Config/Mapping/LumberjackConfigFromDTO.vi"/>
 			</Item>
 			<Item Name="CheckSchemaVerion.vi" Type="VI" URL="../Support/Config/CheckSchemaVerion.vi"/>
 			<Item Name="Merge.vi" Type="VI" URL="../Support/Config/Merge.vi"/>
 			<Item Name="Resolve.vi" Type="VI" URL="../Support/Config/Resolve.vi"/>
 			<Item Name="ValidateAppenderConfigDTO.vi" Type="VI" URL="../Support/Config/ValidateAppenderConfigDTO.vi"/>
 			<Item Name="ValidateFileAppenderConfigDTO.vi" Type="VI" URL="../Support/Config/ValidateFileAppenderConfigDTO.vi"/>
+			<Item Name="ValidateFileConfigDTO.vi" Type="VI" URL="../Support/Config/ValidateFileConfigDTO.vi"/>
 			<Item Name="ValidateFilterDTO.vi" Type="VI" URL="../Support/Config/ValidateFilterDTO.vi"/>
 			<Item Name="ValidateLumberjackConfigDTO.vi" Type="VI" URL="../Support/Config/ValidateLumberjackConfigDTO.vi"/>
 		</Item>
@@ -52,6 +73,7 @@
 		<Item Name="File" Type="Folder">
 			<Property Name="NI.LibItem.Scope" Type="Int">4</Property>
 			<Item Name="BaseFolder.vi" Type="VI" URL="../Support/File/BaseFolder.vi"/>
+			<Item Name="CSVQuoteField.vi" Type="VI" URL="../Support/File/CSVQuoteField.vi"/>
 			<Item Name="IsFileNameSafe.vi" Type="VI" URL="../Support/File/IsFileNameSafe.vi"/>
 			<Item Name="ISO8601FileName.vi" Type="VI" URL="../Support/File/ISO8601FileName.vi"/>
 			<Item Name="PruneSelection.vi" Type="VI" URL="../Support/File/PruneSelection.vi"/>
@@ -85,6 +107,7 @@
 			<Item Name="FileAppenderConfigDTO.ctl" Type="VI" URL="../TypeDefs/ConfigDTO/FileAppenderConfigDTO.ctl"/>
 			<Item Name="FilterDTO.ctl" Type="VI" URL="../TypeDefs/ConfigDTO/FilterDTO.ctl"/>
 			<Item Name="LumberjackConfigDTO.ctl" Type="VI" URL="../TypeDefs/ConfigDTO/LumberjackConfigDTO.ctl"/>
+			<Item Name="FileConfigDTO.ctl" Type="VI" URL="../TypeDefs/ConfigDTO/FileConfigDTO.ctl"/>
 		</Item>
 		<Item Name="Statement.ctl" Type="VI" URL="../TypeDefs/Statement.ctl"/>
 		<Item Name="DropPolicy.ctl" Type="VI" URL="../TypeDefs/DropPolicy.ctl"/>
@@ -97,5 +120,6 @@
 		<Item Name="RelayAppenderConfig.ctl" Type="VI" URL="../TypeDefs/RelayAppenderConfig.ctl"/>
 		<Item Name="LumberjackConfig.ctl" Type="VI" URL="../TypeDefs/LumberjackConfig.ctl"/>
 		<Item Name="Snapshot.ctl" Type="VI" URL="../TypeDefs/Snapshot.ctl"/>
+		<Item Name="FileConfig.ctl" Type="VI" URL="../TypeDefs/FileConfig.ctl"/>
 	</Item>
 </Library>

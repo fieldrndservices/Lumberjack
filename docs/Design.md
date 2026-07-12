@@ -216,7 +216,7 @@ type-specific config typedef.
 
 - `AppenderConfig` (common): ID, threshold, filter mode, filter criteria, queue
   bound, drop policy.
-- `FileAppenderConfig` = `AppenderConfig` + file fields.
+- `FileAppenderConfig` = `common` (`AppenderConfig`) + `file` (`FileConfig`).
 - `LumberjackConfig` (top level, the JSON/inputs boundary) = { schema version,
   global threshold, default `FileAppenderConfig` }.
 
@@ -330,16 +330,18 @@ only; it does not list appenders:
       "threshold": "INFO",
       "filter": { "mode": "Mirror" },
       "queueBound": -1,
-      "dropPolicy": "DropOldest"
+      "dropPolicy": "DropOldest",
+      "useUTC": true
     },
-    "rootFolder": "",
-    "baseName": "",
-    "maxFileSize": 10485760,
-    "maxFileCount": 10,
-    "extension": "csv",
-    "delimiter": ",",
-    "calendarFolderTree": true,
-    "useUTC": true
+    "file": {
+      "rootFolder": "",
+      "baseName": "",
+      "maxFileSize": 10485760,
+      "maxFileCount": 10,
+      "extension": "csv",
+      "delimiter": ",",
+      "calendarFolderTree": true
+    }
   }
 }
 ```
@@ -468,7 +470,13 @@ constructing its `CSVLayout` with that delimiter.
   overwrites a prior one and names sort chronologically (SRS-LMBR-035).
 - **Rollover:** when a write would exceed `maxFileSize`, the current file is
   closed and a new timestamped file is opened; `maxFileSize = -1` disables size
-  rollover (unbounded file), and `0` is invalid (SRS-LMBR-033).
+  rollover (unbounded file), and `0` is invalid (SRS-LMBR-033). File names use
+  second-resolution timestamps and files are opened create-only (never reopened
+  or overwritten), so `maxFileSize` must be large enough that rollover cannot
+  occur twice within one second; a same-second collision faults by design,
+  rather than silently clobbering a log. Realistic (MB-scale) limits never
+  collide; rollover tests that use tiny limits must space rollovers past one
+  second.
 - **Retention:** after a rollover, retention is applied per base-name series:
   within each `baseName`, the oldest files beyond the maximum count are
   deleted; a maximum of `-1` means never delete (keep all), and `0` is invalid
