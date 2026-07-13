@@ -90,6 +90,14 @@ The common configuration shared by every appender (SRS-LMBR-029). Composed
 | filter | Filter | selection filter |
 | queueBound | I32 | -1 = unbounded; 0 invalid; positive = bound (SRS-LMBR-055, 056) |
 | dropPolicy | DropPolicy | applies when bounded (SRS-LMBR-057) |
+| useUTC | Bool | time frame (UTC vs local) for this appender; see note below |
+
+`useUTC` selects the time frame for everything this appender renders: its
+layout's line-timestamp, and (for a file appender) its file names and calendar
+folders. Within one appender the frame is consistent; different appenders may
+use different frames (e.g. a local-time console alongside a UTC log file). It is
+a common field so every appender, including the console, carries it; the
+appender stamps its layout's `useUTC` from this value at init.
 
 The Layout is **not** a config field (config carries only data): the appender
 constructs its Layout at `InitCommon` from data fields (the `delimiter` feeds
@@ -97,10 +105,19 @@ the default `CSVLayout`), and programmatic injection uses `CreateFileAppender`'s
 optional `layout` input (SRS-LMBR-015, SDD 4.2).
 
 ### 2.7 FileAppenderConfig (cluster)
-`AppenderConfig` (nested as `common`) plus: `baseName` (String, opt),
-`rootFolder` (Path), `maxFileSize` (I64), `maxFileCount` (I32),
-`extension` (String), `delimiter` (String), `calendarFolderTree` (Bool),
-`useUTC` (Bool) (SRS-LMBR-030, 032-040).
+Composed from two nested sub-clusters (parallel to how every appender config
+carries `common`): `common` (`AppenderConfig`, 2.6) and `file` (`FileConfig`,
+2.7.1) (SRS-LMBR-030, 032-040). The time frame is `common.useUTC` (2.6), which
+frames this appender's file names, calendar folders, and layout line timestamps
+together.
+
+#### 2.7.1 FileConfig (cluster)
+The file-specific fields, grouped so `FileAppenderConfig` composes cleanly as
+`common` + `file`: `baseName` (String, opt), `rootFolder` (Path),
+`maxFileSize` (I64), `maxFileCount` (I32), `extension` (String),
+`delimiter` (String), `calendarFolderTree` (Bool). Its JSON mirror is
+`FileConfigDTO` (2.11); the only field that differs is `rootFolder` (Path
+natively, String in the DTO).
 
 `maxFileSize`, `maxFileCount`, and `queueBound` share one bounded-value
 convention: a positive value is the limit, `-1` disables the limit (unbounded
@@ -109,8 +126,6 @@ is invalid and rejected by `Validate`. Bounded is the normal case; `-1` is an
 explicit escape hatch left to the deploying developer.
 
 `baseName` is an optional filename prefix (empty = timestamp-only names).
-`useUTC` selects the time frame (UTC vs local) for the file name, the calendar
-folder, and the layout's timestamp column together, so all three agree.
 
 `rootFolder` is a native `Path`. In the JSON DTO it appears as a String (Paths
 are not JSON-serializable); `Resolve` converts it with `String To Path` and
@@ -148,11 +163,13 @@ The Notifier payload broadcast to callers (SDD 2.1).
 ### 2.11 Config DTO (JSON unflatten target)
 For each native config cluster there is a string-typed mirror used only as the
 `Unflatten From JSON` target and merge currency: `FilterDTO`,
-`AppenderConfigDTO`, `FileAppenderConfigDTO`, `LumberjackConfigDTO`. The mirror
-is field-for-field identical to the native cluster except that every enum field
-is a String (member name) and every `Path` field is a String. Because the
-native config carries no objects or handles (P1), the mirror is a clean 1:1
-correspondence with no dropped fields.
+`AppenderConfigDTO`, `FileConfigDTO`, `FileAppenderConfigDTO`,
+`LumberjackConfigDTO`. `FileAppenderConfigDTO` composes `AppenderConfigDTO`
+(`common`) and `FileConfigDTO` (`file`), mirroring the native nesting. The
+mirror is field-for-field identical to the native cluster except that every
+enum field is a String (member name) and every `Path` field is a String.
+Because the native config carries no objects or handles (P1), the mirror is a
+clean 1:1 correspondence with no dropped fields.
 
 `Merge` operates on the DTO (native `Unflatten From JSON` with the baseline DTO
 as the default value gives per-key override); `Validate` checks the DTO (known
@@ -213,7 +230,7 @@ specifics to subclasses (SRS-LMBR-018).
 |---|---|---|---|
 | InitCommon | protected | static | Set the common private data from an `AppenderConfig` (called by each subclass init, SRS-LMBR-031). |
 | GetID | community | static | Return the appender ID (used by the manager's registry/unregister). |
-| HandleStatement | protected | static | Apply the appender threshold then the Filter; if accepted, format via `layout` and call `Write`; enforce backpressure on intake (SRS-LMBR-009, 026, 055-059). |
+| HandleStatement | protected | static | Apply the appender threshold (RankCompare) then the Filter (mirror, or routed via `RoutedFilterMatch`); if accepted, call the DD `Write` with the `Statement`. Does not format (Write does) and does not enforce backpressure (that is the Actor Core intake path) (SRS-LMBR-009, 026, 027). |
 | OpenSink | protected | **DD** *(must override)* | Open the sink resource on actor startup. |
 | Write | protected | **DD** *(must override)* | Write one formatted, accepted line to the sink. |
 | CloseSink | protected | **DD** *(must override)* | Flush and close the sink on stop. |
@@ -225,12 +242,13 @@ specifics to subclasses (SRS-LMBR-018).
 Writes statements to rolling, retained log files.
 
 - **Inherits:** Appender.lvclass.
-- **Private data:** `FileAppenderConfig` fields, `currentFileRefnum`,
+- **Private data:** `layout` (Layout, default `CSVLayout`), `fileConfig`
+  (FileConfig - the resolved file-specific fields), `currentFileRefnum`,
   `currentFileSize`, `currentFolder`.
 
 | Member | Scope | Dispatch | Description |
 |---|---|---|---|
-| Init | public | static | Set file-specific fields, then call parent `InitCommon` (SRS-LMBR-031). |
+| Init | public | static | Store the `layout` (default `CSVLayout`) and stamp its `useUTC` from `common.useUTC`; store the file config; then call parent `InitCommon` (SRS-LMBR-031). |
 | OpenSink | protected | override | Create the base (and calendar) folder; open the first ISO 8601-named file (SRS-LMBR-035, 036). |
 | Write | protected | override | Append the line; roll over if the size limit is exceeded, then prune to the retention limit (SRS-LMBR-033, 034). |
 | CloseSink | protected | override | Flush and close the current file. |
@@ -239,16 +257,17 @@ Writes statements to rolling, retained log files.
 | Prune | private | static | List this appender's own `baseName_*` files across the root (and any calendar sub-folders), then delete oldest beyond `maxFileCount` via `PruneSelection` (grouped per base name); -1 = keep all. |
 
 ### 3.5 ConsoleAppender.lvclass
-Writes formatted lines to the console/standard output.
+Writes formatted lines to the process standard output (Windows).
 
 - **Inherits:** Appender.lvclass.
-- **Private data:** none beyond common.
+- **Private data:** `layout` (Layout) - the formatting strategy, default
+  `TextLayout` if none injected.
 
 | Member | Scope | Dispatch | Description |
 |---|---|---|---|
-| Init | public | static | Set console fields (none beyond common), then call parent `InitCommon`. |
-| OpenSink | protected | override | No-op (console always available). |
-| Write | protected | override | Print the formatted line. |
+| Init | public | static | Store the `layout` (default `TextLayout`), stamp its `useUTC` from `common.useUTC`, then call parent `InitCommon`. |
+| OpenSink | protected | override | No-op (the console is always available). |
+| Write | protected | override | Format the `Statement` via `layout`, append CR/LF, and write to stdout (fd 1) through the C runtime `_write`. Windows-only; other platforms are a future addition. Best-effort. |
 | CloseSink | protected | override | No-op. |
 
 ### 3.6 RelayAppender.lvclass
@@ -267,13 +286,17 @@ Delivers accepted statements to the application (SRS-LMBR-023).
 | CloseSink | protected | override | Queue mode: release the owned queue. |
 
 ### 3.7 Layout.lvclass (abstract)
-Stateless formatting strategy (SRS-LMBR-015). By-value, not an actor.
+Formatting strategy (SRS-LMBR-015). By-value, not an actor.
 
 - **Inherits:** LabVIEW Object.
+- **Private data:** `useUTC` (Bool) - the time frame concrete `Format` overrides
+  use for the timestamp. Set by the owning appender at init (from
+  `common.useUTC`) via the property/accessor, read by each `Format` override.
 
 | Member | Scope | Dispatch | Description |
 |---|---|---|---|
-| Format | public | **DD** *(must override)* | Convert a `Statement` to a `String`. |
+| Format | public | **DD** *(must override)* | Convert a `Statement` to a `String` (content only, no trailing line terminator; the appender's `Write` frames lines). Formats the timestamp per `useUTC`. |
+| useUTC accessor | read protected / write community | static | Read (subclass `Format`) and write (owning appender, a library friend) the time frame. |
 
 ### 3.8 CSVLayout.lvclass
 - **Inherits:** Layout.lvclass. **Private data:** `delimiter`.
@@ -298,8 +321,8 @@ All extend `Message.lvclass` and override `Do.vi`. Each has an auto-generated
 ### 4.1 LogStatementMsg (data plane)
 - **Direction:** caller (via `Logger.Log`) to each appender enqueuer.
 - **Payload:** `Statement`.
-- **Do.vi:** call the receiving `Appender`'s `HandleStatement` (threshold,
-  filter, format, write) (SRS-LMBR-019).
+- **Do.vi:** runs on the receiving appender; call its `HandleStatement`
+  (threshold, then filter; on accept, the DD `Write`) (SRS-LMBR-019).
 
 ### 4.2 RegisterAppenderMsg (control plane)
 - **Direction:** caller to LogManager.

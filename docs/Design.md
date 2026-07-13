@@ -216,7 +216,7 @@ type-specific config typedef.
 
 - `AppenderConfig` (common): ID, threshold, filter mode, filter criteria, queue
   bound, drop policy.
-- `FileAppenderConfig` = `AppenderConfig` + file fields.
+- `FileAppenderConfig` = `common` (`AppenderConfig`) + `file` (`FileConfig`).
 - `LumberjackConfig` (top level, the JSON/inputs boundary) = { schema version,
   global threshold, default `FileAppenderConfig` }.
 
@@ -322,7 +322,7 @@ only; it does not list appenders:
 
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": "00.00.01",
   "globalThreshold": "INFO",
   "defaultFileAppender": {
     "common": {
@@ -330,16 +330,18 @@ only; it does not list appenders:
       "threshold": "INFO",
       "filter": { "mode": "Mirror" },
       "queueBound": -1,
-      "dropPolicy": "DropOldest"
+      "dropPolicy": "DropOldest",
+      "useUTC": true
     },
-    "rootFolder": "",
-    "baseName": "",
-    "maxFileSize": 10485760,
-    "maxFileCount": 10,
-    "extension": "csv",
-    "delimiter": ",",
-    "calendarFolderTree": true,
-    "useUTC": true
+    "file": {
+      "rootFolder": "",
+      "baseName": "",
+      "maxFileSize": 10485760,
+      "maxFileCount": 10,
+      "extension": "csv",
+      "delimiter": ",",
+      "calendarFolderTree": true
+    }
   }
 }
 ```
@@ -468,7 +470,13 @@ constructing its `CSVLayout` with that delimiter.
   overwrites a prior one and names sort chronologically (SRS-LMBR-035).
 - **Rollover:** when a write would exceed `maxFileSize`, the current file is
   closed and a new timestamped file is opened; `maxFileSize = -1` disables size
-  rollover (unbounded file), and `0` is invalid (SRS-LMBR-033).
+  rollover (unbounded file), and `0` is invalid (SRS-LMBR-033). File names use
+  second-resolution timestamps and files are opened create-only (never reopened
+  or overwritten), so `maxFileSize` must be large enough that rollover cannot
+  occur twice within one second; a same-second collision faults by design,
+  rather than silently clobbering a log. Realistic (MB-scale) limits never
+  collide; rollover tests that use tiny limits must space rollovers past one
+  second.
 - **Retention:** after a rollover, retention is applied per base-name series:
   within each `baseName`, the oldest files beyond the maximum count are
   deleted; a maximum of `-1` means never delete (keep all), and `0` is invalid
@@ -632,8 +640,8 @@ lumberjack/
       Logger.lvclass/        API facade
     Core/
       LogManager.lvclass/   root actor
-      Appender.lvclass/      abstract base
       Appenders/
+        Appender.lvclass/    abstract base
         FileAppender.lvclass/
         ConsoleAppender.lvclass/
         RelayAppender.lvclass/
@@ -646,8 +654,9 @@ lumberjack/
     TypeDefs/                typedef controls
       ConfigDTO/             string DTO mirrors
     Support/                 internal helpers:
-      Config/  Enum/  File/
-      Path/  Severity/  Store/  Tag/
+      Config/  Config/Mapping/  Enum/
+      Filter/  File/  Path/
+      Severity/  Store/  Tag/
   examples/
   tests/                     Unit/ Integration/ Support/
   scripts/                   Build, Build PPL, Package, Test
@@ -666,7 +675,8 @@ are in the Message and Class Reference. This tree shows layout only.
 | Layouts | `src/Core/Layouts/` | `Create` public, `Format` public DD |
 | Messages | `src/Messages/` | community/private (internal transport) |
 | Type definitions | `src/TypeDefs/` | public where they cross the API (Severity, config clusters, Filter); private otherwise (Snapshot) |
-| Pure helpers (Severity, Enum, Tag, File) | `src/Support/Severity`, `Enum`, `Tag`, `File` | community (test library is a friend), off the public PPL surface |
+| Pure helpers (Severity, Enum, Tag, File, Filter) | `src/Support/Severity`, `Enum`, `Tag`, `File`, `Filter` | community (test library is a friend), off the public PPL surface |
+| Config (Merge, Validate, Resolve, mappers) | `src/Support/Config`, `Config/Mapping` | community (test library is a friend), off the public PPL surface |
 | Store and Path helpers | `src/Support/Store`, `Path` | private |
 
 Two placements tie to earlier decisions: the singleton process store is isolated

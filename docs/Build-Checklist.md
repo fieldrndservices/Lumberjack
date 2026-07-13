@@ -85,22 +85,35 @@ or the reason for the position.
 *Integration tests via a console or relay-queue capture probe can begin once the
 concretes exist, before the manager or facade.*
 
-- [ ] 17. `Appender.lvclass` (Actor subclass): `InitCommon`, `GetID`,
+- [x] 17. `Appender.lvclass` (Actor subclass): `InitCommon`, `GetID`,
       `HandleStatement`, abstract `OpenSink`/`Write`/`CloseSink` (DD),
       `Actor Core`. (Phases 1-3.)
-- [ ] 18. `LogStatementMsg`: payload `Statement`; `Do.vi` calls
+- [x] 18. `LogStatementMsg`: payload `Statement`; `Do.vi` calls
       `Appender:HandleStatement`. (Statement, Appender.)
-- [ ] 19. `ConsoleAppender`: sink overrides. (Appender; simplest concrete,
+- [x] 19. `ConsoleAppender`: sink overrides. (Appender; simplest concrete,
       build first.)
-- [ ] 20. `FileAppender`: sink overrides, `OpenNewFile`, `Prune` (lists only its
+- [x] 20. `FileAppender`: sink overrides, `OpenNewFile`, `Prune` (lists only its
       own `baseName_*` files before calling `PruneSelection`, so it never
       touches another appender's logs). Trusts `baseName`/`extension` are
       already safe (checked via `IsFileNameSafe` at Validate/creation, item
       15a). The size-rollover check has a `maxFileSize == -1` early-out (no
       size rollover); `0` never reaches here (rejected by Validate).
       (Appender, FileAppenderConfig, Phase-4 file helpers.)
-- [ ] 21. `RelayAppender`: `Write` sends `LogStatementMsg` or enqueues,
+- [x] 21. `RelayAppender`: `Write` sends `LogStatementMsg` or enqueues,
       `GetRelayQueue`. (Appender, RelayAppenderConfig, LogStatementMsg.)
+- [ ] 21a. Backpressure increment (DEFERRED to a follow-up PR, not in the
+      AppenderDevelopment PR). Goal: bounded memory under sustained overload
+      with a drop policy, without unbounded queue growth. The earlier Option B
+      sketch (separate bounded buffer in `Appender` private data, drained by a
+      parallel loop in `Actor Core`) is to be RECONSIDERED before building: it
+      duplicates the AF queue's own producer/consumer machinery and adds a
+      second concurrent loop. A simpler design to evaluate first is a
+      bounded-enqueue-with-drop at send time (track each appender's in-flight
+      backlog; when it reaches `queueBound`, apply `dropPolicy` and
+      `EmitDropNotice` instead of enqueuing), keeping `HandleStatement -> Write`
+      synchronous and leaving `Actor Core` unchanged. Decide the design in the
+      follow-up. `queueBound = -1` bypasses backpressure. (Appender,
+      LogStatementMsg; SRS-LMBR-055-059.)
 
 ## Phase 6 - Root actor and control messages
 
@@ -148,8 +161,10 @@ concretes exist, before the manager or facade.*
       schemaVersion, `CheckSchemaVersion`); +22 (bounded value invalid:
       maxFileSize/maxFileCount/queueBound must be -1 or positive); +23 (routed
       filter level range out of order); +24 (empty appender id); +25 (invalid
-      DTO field type, structural dispatch default); +26..39 reserved for other
-      `Validate` checks. Register the block in an error-text file
+      DTO field type, structural dispatch default); +26 (`RelayAppender`
+      resource invalid at `OpenSink`: message mode requires a valid consumer
+      enqueuer, queue mode requires an obtained relay queue); +27..39 reserved
+      for other checks. Register the block in an error-text file
       (`errors/Lumberjack-errors.txt`) so `General Error Handler` shows the
       message; messages should name the offending value and list the valid
       members. Keep `Base+99` within the 5000-9999 user range for any chosen

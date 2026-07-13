@@ -279,8 +279,10 @@ Notation: each requirement has an ID, a statement, and a lineage tag.
 - **SRS-LMBR-036 [P]** Each file appender shall optionally organize its files
   into a calendar-based folder hierarchy under its root folder, based on file
   creation date (Logger's `Configure Calendar Folder Tree`, now per instance).
-  The calendar folder, the file name, and the timestamp column shall share one
-  time frame (UTC or local) per the appender's `useUTC` setting.
+  The calendar folder, the file name, and the layout's line timestamp shall
+  share one time frame (UTC or local) per the appender's `useUTC` setting (a
+  common `AppenderConfig` field), so everything a given appender renders agrees;
+  different appenders may use different frames.
 - **SRS-LMBR-037 [P]** Each file appender shall support a per-instance
   configurable file extension and field delimiter (Logger's
   `Configure File Extension` / `Configure Delimiter`).
