@@ -33,8 +33,15 @@
 				<Property Name="NI.LibItem.Scope" Type="Int">4</Property>
 			</Item>
 		</Item>
+		<Item Name="LogManager" Type="Folder">
+			<Item Name="LogManager.lvclass" Type="LVClass" URL="../Core/LogManager/LogManager.lvclass/LogManager.lvclass"/>
+		</Item>
 		<Item Name="Messages" Type="Folder">
+			<Item Name="ConfigureMsg.lvclass" Type="LVClass" URL="../Core/Messages/ConfigureMsg.lvclass"/>
 			<Item Name="LogStatementMsg.lvclass" Type="LVClass" URL="../Core/Messages/LogStatementMsg.lvclass/LogStatementMsg.lvclass"/>
+			<Item Name="RegisterAppenderMsg.lvclass" Type="LVClass" URL="../Core/Messages/RegisterAppenderMsg.lvclass/RegisterAppenderMsg.lvclass"/>
+			<Item Name="SetGlobalThresholdMsg.lvclass" Type="LVClass" URL="../Core/Messages/SetGlobalThresholdMsg.lvclass/SetGlobalThresholdMsg.lvclass"/>
+			<Item Name="UnregisterAppenderMsg.lvclass" Type="LVClass" URL="../Core/Messages/UnregisterAppenderMsg.lvclass/UnregisterAppenderMsg.lvclass"/>
 		</Item>
 	</Item>
 	<Item Name="Support" Type="Folder">
@@ -121,5 +128,6 @@
 		<Item Name="LumberjackConfig.ctl" Type="VI" URL="../TypeDefs/LumberjackConfig.ctl"/>
 		<Item Name="Snapshot.ctl" Type="VI" URL="../TypeDefs/Snapshot.ctl"/>
 		<Item Name="FileConfig.ctl" Type="VI" URL="../TypeDefs/FileConfig.ctl"/>
+		<Item Name="RegistryEntry.ctl" Type="VI" URL="../TypeDefs/RegistryEntry.ctl"/>
 	</Item>
 </Library>

@@ -26,12 +26,21 @@
 	<Property Name="NI.SortType" Type="Int">3</Property>
 	<Item Name="Friends List" Type="Friends List">
 		<Item Name="Lumberjack.lvlib:LogStatementMsg.lvclass" Type="Friended Library" URL="../../../Messages/LogStatementMsg.lvclass/LogStatementMsg.lvclass"/>
+		<Item Name="Lumberjack.lvlib:LogManager.lvclass" Type="Friended Library" URL="../../../LogManager/LogManager.lvclass/LogManager.lvclass"/>
 	</Item>
 	<Item Name="Parent Libraries" Type="Parent Libraries">
 		<Item Name="Actor Framework.lvlib:Actor.lvclass" Type="Parent" URL="/&lt;vilib&gt;/ActorFramework/Actor/Actor.lvclass"/>
 	</Item>
 	<Item Name="Appender.ctl" Type="Class Private Data" URL="Appender.ctl">
 		<Property Name="NI.LibItem.Scope" Type="Int">2</Property>
+	</Item>
+	<Item Name="SetGate.vi" Type="VI" URL="../SetGate.vi">
+		<Property Name="NI.ClassItem.ExecutionSystem" Type="Int">-1</Property>
+		<Property Name="NI.ClassItem.Flags" Type="Int">0</Property>
+		<Property Name="NI.ClassItem.InvokeUsage" Type="UInt">0</Property>
+		<Property Name="NI.ClassItem.MethodScope" Type="UInt">1</Property>
+		<Property Name="NI.ClassItem.Priority" Type="Int">1</Property>
+		<Property Name="NI.ClassItem.State" Type="Int">1342972416</Property>
 	</Item>
 	<Item Name="config" Type="Property Definition">
 		<Property Name="NI.ClassItem.Property.LongName" Type="Str">config</Property>
@@ -79,7 +88,7 @@
 		<Property Name="NI.ClassItem.InvokeUsage" Type="UInt">2</Property>
 		<Property Name="NI.ClassItem.MethodScope" Type="UInt">4</Property>
 		<Property Name="NI.ClassItem.Priority" Type="Int">1</Property>
-		<Property Name="NI.ClassItem.State" Type="Int">1074274816</Property>
+		<Property Name="NI.ClassItem.State" Type="Int">1342710272</Property>
 		<Property Name="NI.LibItem.Scope" Type="Int">4</Property>
 	</Item>
 	<Item Name="InitCommon.vi" Type="VI" URL="../InitCommon.vi">
