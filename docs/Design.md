@@ -322,7 +322,7 @@ only; it does not list appenders:
 
 ```json
 {
-  "schemaVersion": "00.00.01",
+  "schemaVersion": "0.0.1",
   "globalThreshold": "INFO",
   "defaultFileAppender": {
     "common": {

@@ -32,8 +32,24 @@ or the reason for the position.
 ## Phase 2 - Layout
 
 - [x] 6. `Layout.lvclass` abstract, with `Format` (DD). (Statement.)
-- [x] 7. `CSVLayout`, `JSONLayout`, `TextLayout`, each overriding `Format`.
-      (Layout, Statement.)
+- [~] 7. `CSVLayout`, `JSONLayout`, `TextLayout`, each overriding `Format`.
+      (Layout, Statement.) `TextLayout.Format` and `CSVLayout.Format` are
+      implemented; `JSONLayout.Format` is still a STUB (not on any default
+      path). Intended JSONLayout design when implemented: follow the Go
+      `log/slog` JSONHandler convention - one JSON object per line
+      (newline-delimited JSON / JSON Lines), standard keys `time` (ISO 8601,
+      UTC per `useUTC`), `level` (the UPPERCASE Severity token, which already
+      matches slog's INFO/WARN/etc.), and `msg`, followed by the extra
+      attribute keys `sourceTag` and `originVI`. Assemble the flat object by
+      hand (like the CSV row) rather than via Flatten To JSON, to control key
+      names and order. Build a `JSONEscapeString` helper (the JSON analog of
+      the CSV field-quoting helper): escape `"`, `\`, and control characters
+      (`\n` `\r` `\t` `\b` `\f`, other U+0000-U+001F as `\uXXXX`), then wrap in
+      quotes; `message` is the field most likely to need it. Layout returns the
+      single line with no terminator (the appender's `Write` frames it), so a
+      file of these lines is JSON Lines, not a JSON array. Adopt only the
+      output format, not slog's extensible attribute/group model (the Statement
+      has a fixed field set). Reference: https://go.dev/blog/slog.
 
 ## Phase 3 - Config typedefs
 
@@ -66,7 +82,7 @@ or the reason for the position.
 - [x] 16. Config: `Merge` (Unflatten From JSON, baseline DTO as default) and
       `Validate` operate on the string DTO; `Resolve` maps the validated DTO to
       the native `LumberjackConfig` (names to enums, `String To Path`) and
-      resolves paths. `schemaVersion` is a String in canonical `00.00.01`
+      resolves paths. `schemaVersion` is a String in canonical semver `0.0.1`
       form; `CheckSchemaVersion.vi` owns the accepted set, faults on a
       non-member (message lists the accepted set), and exposes the current
       version the baseline DTO stamps so a file omitting the key reads as
@@ -117,21 +133,21 @@ concretes exist, before the manager or facade.*
 
 ## Phase 6 - Root actor and control messages
 
-- [ ] 22. `LogManager.lvclass`: `ResolveConfig`, `LaunchAppender`,
+- [x] 22. `LogManager.lvclass`: `ResolveConfig`, `LaunchAppender`,
       `PostSnapshot`, `Actor Core` (launch default FileAppender, post initial
       Snapshot), `HandleStop`. (Appender/FileAppender, Snapshot, Config VIs.)
-- [ ] 23. Control messages: `RegisterAppender`, `UnregisterAppender`,
+- [x] 23. Control messages: `RegisterAppender`, `UnregisterAppender`,
       `SetGlobalThreshold`, `ConfigureAppender`, `Configure`. (Their `Do.vi`
       call LogManager and Appender methods, so after both.)
 
 ## Phase 7 - Facade and singleton
 
-- [ ] 24. `Logger.lvclass` data (Notifier + manager enqueuer) and `Log.vi` (read
+- [x] 24. `Logger.lvclass` data (Notifier + manager enqueuer) and `Log.vi` (read
       Snapshot, stage-1 gate, build Statement, fan out LogStatementMsg).
       (Snapshot, Statement, LogStatementMsg.)
-- [ ] 25. Store: `SetProcessDefault`, `GetProcessDefault`. (Logger type from
+- [x] 25. Store: `SetProcessDefault`, `GetProcessDefault`. (Logger type from
       item 24.)
-- [ ] 26. `Initialize` (launch LogManager, create Notifier, post initial
+- [x] 26. `Initialize` (launch LogManager, create Notifier, post initial
       Snapshot, store default) and `Shutdown`. (LogManager, Store.)
 - [ ] 27. Logger control wrappers: `ConfigureLevel`, `ConfigureVerbosity`,
       `Register`/`Unregister`/`ConfigureAppender`, `CatchError`. (Phase-6
@@ -163,7 +179,12 @@ concretes exist, before the manager or facade.*
       filter level range out of order); +24 (empty appender id); +25 (invalid
       DTO field type, structural dispatch default); +26 (`RelayAppender`
       resource invalid at `OpenSink`: message mode requires a valid consumer
-      enqueuer, queue mode requires an obtained relay queue); +27..39 reserved
+      enqueuer, queue mode requires an obtained relay queue). The next three
+      are warning-level (status FALSE, non-zero code) rather than hard errors:
+      +27 (`LaunchAppender` ignored a duplicate appender id, so ids stay
+      unique); +28 (`ConfigureAppender` could not find the given appender id);
+      +29 (`ResolveLogger` found no wired instance and no process default, so
+      the Logger is not initialized and the call is a no-op). +30..39 reserved
       for other checks. Register the block in an error-text file
       (`errors/Lumberjack-errors.txt`) so `General Error Handler` shows the
       message; messages should name the offending value and list the valid

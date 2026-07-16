@@ -148,7 +148,7 @@ The `Initialize` boundary object (SRS-LMBR-050). Native types; the JSON form is
 
 | Field | Type |
 |---|---|
-| schemaVersion | String (canonical 00.00.01 form) |
+| schemaVersion | String (semver, e.g. 0.0.1) |
 | globalThreshold | Severity |
 | defaultFileAppender | FileAppenderConfig |
 
