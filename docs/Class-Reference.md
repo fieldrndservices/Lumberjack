@@ -17,8 +17,9 @@ implementation-facing companion to the SDD.
 
 Notation:
 
-- **Scope**: `public`, `community`, `protected`, `private` (LabVIEW member
-  access scopes).
+- **Scope**: `public`, `protected`, `private` (LabVIEW member access scopes).
+  Internal members shown as `protected + friend` are `protected` with an
+  explicit `FRIEND` declaration for the non-subclass callers that need them.
 - **Dispatch**: `static` (normal) or **DD** (dynamic dispatch). *(must
   override)* marks an abstract DD member a subclass is required to implement;
   *(override)* marks a member that overrides a parent.
@@ -148,7 +149,7 @@ The `Initialize` boundary object (SRS-LMBR-050). Native types; the JSON form is
 
 | Field | Type |
 |---|---|
-| schemaVersion | String (canonical 00.00.01 form) |
+| schemaVersion | String (semver, e.g. 0.0.1) |
 | globalThreshold | Severity |
 | defaultFileAppender | FileAppenderConfig |
 
@@ -200,7 +201,7 @@ Not an actor.
 | ConfigureAppender | public | static | Send `ConfigureAppenderMsg`. |
 | CatchError | public | static | General-error-handler integration; log and optionally display (SRS-LMBR-041). |
 | Shutdown | public | static | Send framework Stop to the manager (SRS-LMBR-002). |
-| Resolve Logger | private | static | Return the wired instance or fetch the process default (singleton support, SDD 2.4). |
+| ResolveLogger | private | static | Return the wired instance or fetch the process default (singleton support, SDD 2.4). |
 
 ### 3.2 LogManager.lvclass
 Root actor; owns the control plane and is the sole poster of the Snapshot.
@@ -229,7 +230,7 @@ specifics to subclasses (SRS-LMBR-018).
 | Member | Scope | Dispatch | Description |
 |---|---|---|---|
 | InitCommon | protected | static | Set the common private data from an `AppenderConfig` (called by each subclass init, SRS-LMBR-031). |
-| GetID | community | static | Return the appender ID (used by the manager's registry/unregister). |
+| GetID | protected + friend | static | Return the appender ID (used by the manager's registry/unregister). |
 | HandleStatement | protected | static | Apply the appender threshold (RankCompare) then the Filter (mirror, or routed via `RoutedFilterMatch`); if accepted, call the DD `Write` with the `Statement`. Does not format (Write does) and does not enforce backpressure (that is the Actor Core intake path) (SRS-LMBR-009, 026, 027). |
 | OpenSink | protected | **DD** *(must override)* | Open the sink resource on actor startup. |
 | Write | protected | **DD** *(must override)* | Write one formatted, accepted line to the sink. |
@@ -296,7 +297,7 @@ Formatting strategy (SRS-LMBR-015). By-value, not an actor.
 | Member | Scope | Dispatch | Description |
 |---|---|---|---|
 | Format | public | **DD** *(must override)* | Convert a `Statement` to a `String` (content only, no trailing line terminator; the appender's `Write` frames lines). Formats the timestamp per `useUTC`. |
-| useUTC accessor | read protected / write community | static | Read (subclass `Format`) and write (owning appender, a library friend) the time frame. |
+| useUTC accessor | read protected / write protected + friend | static | Read (subclass `Format`) and write (owning appender, a library friend) the time frame. |
 
 ### 3.8 CSVLayout.lvclass
 - **Inherits:** Layout.lvclass. **Private data:** `delimiter`.

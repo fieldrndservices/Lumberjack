@@ -33,9 +33,20 @@
 				<Property Name="NI.LibItem.Scope" Type="Int">4</Property>
 			</Item>
 		</Item>
-		<Item Name="Messages" Type="Folder">
-			<Item Name="LogStatementMsg.lvclass" Type="LVClass" URL="../Core/Messages/LogStatementMsg.lvclass/LogStatementMsg.lvclass"/>
+		<Item Name="LogManager" Type="Folder">
+			<Item Name="LogManager.lvclass" Type="LVClass" URL="../Core/LogManager/LogManager.lvclass/LogManager.lvclass"/>
 		</Item>
+		<Item Name="Messages" Type="Folder">
+			<Item Name="ConfigureAppenderMsg.lvclass" Type="LVClass" URL="../Core/Messages/ConfigureAppenderMsg.lvclass/ConfigureAppenderMsg.lvclass"/>
+			<Item Name="ConfigureMsg.lvclass" Type="LVClass" URL="../Core/Messages/ConfigureMsg.lvclass/ConfigureMsg.lvclass"/>
+			<Item Name="LogStatementMsg.lvclass" Type="LVClass" URL="../Core/Messages/LogStatementMsg.lvclass/LogStatementMsg.lvclass"/>
+			<Item Name="RegisterAppenderMsg.lvclass" Type="LVClass" URL="../Core/Messages/RegisterAppenderMsg.lvclass/RegisterAppenderMsg.lvclass"/>
+			<Item Name="SetGlobalThresholdMsg.lvclass" Type="LVClass" URL="../Core/Messages/SetGlobalThresholdMsg.lvclass/SetGlobalThresholdMsg.lvclass"/>
+			<Item Name="UnregisterAppenderMsg.lvclass" Type="LVClass" URL="../Core/Messages/UnregisterAppenderMsg.lvclass/UnregisterAppenderMsg.lvclass"/>
+		</Item>
+	</Item>
+	<Item Name="Public" Type="Folder">
+		<Item Name="Logger.lvclass" Type="LVClass" URL="../Public/Logger.lvclass/Logger.lvclass"/>
 	</Item>
 	<Item Name="Support" Type="Folder">
 		<Item Name="Config" Type="Folder">
@@ -52,7 +63,7 @@
 				<Item Name="LumberjackConfigDTOFromNative.vi" Type="VI" URL="../Support/Config/Mapping/LumberjackConfigDTOFromNative.vi"/>
 				<Item Name="LumberjackConfigFromDTO.vi" Type="VI" URL="../Support/Config/Mapping/LumberjackConfigFromDTO.vi"/>
 			</Item>
-			<Item Name="CheckSchemaVerion.vi" Type="VI" URL="../Support/Config/CheckSchemaVerion.vi"/>
+			<Item Name="CheckSchemaVersion.vi" Type="VI" URL="../Support/Config/CheckSchemaVersion.vi"/>
 			<Item Name="Merge.vi" Type="VI" URL="../Support/Config/Merge.vi"/>
 			<Item Name="Resolve.vi" Type="VI" URL="../Support/Config/Resolve.vi"/>
 			<Item Name="ValidateAppenderConfigDTO.vi" Type="VI" URL="../Support/Config/ValidateAppenderConfigDTO.vi"/>
@@ -92,6 +103,13 @@
 		</Item>
 		<Item Name="Store" Type="Folder">
 			<Property Name="NI.LibItem.Scope" Type="Int">2</Property>
+			<Item Name="ClearProcessDefault.vi" Type="VI" URL="../Support/Store/ClearProcessDefault.vi"/>
+			<Item Name="GetProcessDefault.vi" Type="VI" URL="../Support/Store/GetProcessDefault.vi"/>
+			<Item Name="GetVerbosity.vi" Type="VI" URL="../Support/Store/GetVerbosity.vi"/>
+			<Item Name="ProcessDefaultQueueName.vi" Type="VI" URL="../Support/Store/ProcessDefaultQueueName.vi"/>
+			<Item Name="ProcessVerbosityQueueName.vi" Type="VI" URL="../Support/Store/ProcessVerbosityQueueName.vi"/>
+			<Item Name="SetProcessDefault.vi" Type="VI" URL="../Support/Store/SetProcessDefault.vi"/>
+			<Item Name="SetVerbosity.vi" Type="VI" URL="../Support/Store/SetVerbosity.vi"/>
 		</Item>
 		<Item Name="Tag" Type="Folder">
 			<Property Name="NI.LibItem.Scope" Type="Int">4</Property>
@@ -121,5 +139,6 @@
 		<Item Name="LumberjackConfig.ctl" Type="VI" URL="../TypeDefs/LumberjackConfig.ctl"/>
 		<Item Name="Snapshot.ctl" Type="VI" URL="../TypeDefs/Snapshot.ctl"/>
 		<Item Name="FileConfig.ctl" Type="VI" URL="../TypeDefs/FileConfig.ctl"/>
+		<Item Name="RegistryEntry.ctl" Type="VI" URL="../TypeDefs/RegistryEntry.ctl"/>
 	</Item>
 </Library>
