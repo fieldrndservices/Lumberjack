@@ -149,10 +149,10 @@ concretes exist, before the manager or facade.*
       item 24.)
 - [x] 26. `Initialize` (launch LogManager, create Notifier, post initial
       Snapshot, store default) and `Shutdown`. (LogManager, Store.)
-- [ ] 27. Logger control wrappers: `ConfigureLevel`, `ConfigureVerbosity`,
+- [x] 27. Logger control wrappers: `ConfigureLevel`, `ConfigureVerbosity`,
       `Register`/`Unregister`/`ConfigureAppender`, `CatchError`. (Phase-6
       messages.)
-- [ ] 28. The six level VIs `Trace`, `Debug`, `Info`, `Warn`, `Error`, `Fatal`,
+- [x] 28. The six level VIs `Trace`, `Debug`, `Info`, `Warn`, `Error`, `Fatal`,
       each wrapping `Log.vi` with a fixed level. (Log.vi.)
 
 ## Phase 8 - Surface and packaging
@@ -163,6 +163,25 @@ concretes exist, before the manager or facade.*
 - [ ] 31. Finalize `tests/` (Unit began at Phase 4, Integration at Phase 5);
       wire the `Test.vi` runner.
 - [ ] 32. `scripts`: `Build PPL`, `Package`, `Build` (source dist).
+- [ ] 34. Reviewability tool (`scripts/`): a `PrintLibraryToHTML` utility that
+      walks every VI in `Lumberjack.lvlib` and exports its documentation
+      (front panel, block diagram, connector pane, VI and control
+      descriptions) to HTML via the VI Server print-to-HTML methods, into a
+      versioned output folder. Purpose: let a reviewer or auditor diff the
+      implementation against the design docs (Requirements, Design, API-Guide,
+      Class-Reference) without opening LabVIEW. Not part of the shipped
+      library; a development/QA aid. Consider a manifest/index page listing the
+      exported VIs by class/folder to mirror the source tree.
+- [ ] 35. Documentation-completeness audit (uses item 34's HTML export): walk
+      every VI and confirm it has a meaningful VI Description, that every
+      connector-pane control/indicator has a Description, and that terminals
+      have Tips where they aid an adopter (most valuable on public,
+      adopter-facing VIs). Fix missing or stale text, and reconcile any VI
+      whose docs predate a later-settled convention. Distinct from the
+      API-vs-code reconciliation (which targets behavior/wording drift between
+      the design docs and the code); this pass targets the in-VI documentation
+      quality itself. Tips apply to terminals/controls only (LabVIEW has no
+      per-VI Tip).
 - [ ] 33. Fault code mapping: express every Lumberjack error code as
       `LumberjackErrorBase + offset`, where `LumberjackErrorBase` is a single
       compile-time constant defaulting to 5000. The block spans

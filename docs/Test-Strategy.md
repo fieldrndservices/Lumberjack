@@ -97,8 +97,8 @@ To keep the pure-VI seam usable, the pure support helpers (`src/Support/`
 Severity, Enum, Tag, File, Filter, and Config: rank comparison, enum name/string
 conversion, tag defaulting and sanitization, ISO 8601 filename building,
 base-folder computation, prune selection, routed-filter matching, and config
-merge/validate/resolve with the native/DTO mappers) are scoped **community**,
-and the test library (`tests/Tests.lvlib`)
+merge/validate/resolve with the native/DTO mappers) are scoped
+**protected**, and the test library (`tests/Tests.lvlib`)
 is declared a **friend** of `Lumberjack.lvlib`. That lets the unit tests call
 these helpers directly while keeping them off the public (PPL-exported) surface,
 so adopters still cannot. The stateful/constrained helpers, Store
