@@ -322,7 +322,7 @@ only; it does not list appenders:
 
 ```json
 {
-  "schemaVersion": "00.00.01",
+  "schemaVersion": "0.0.1",
   "globalThreshold": "INFO",
   "defaultFileAppender": {
     "common": {
@@ -370,6 +370,18 @@ understand.
 Additional appenders are added afterward by the application constructing and
 configuring an appender object and sending `RegisterAppenderMsg`
 (SRS-LMBR-028, 031, 044).
+
+![Figure 7. Initialization / launch sequence. The notifier is created and stamped into the manager before Launch Root Actor, so the running actor carries it. Launch Nested Actor returns the caller-actor-out (the manager with the child recorded), which must be threaded forward for nested teardown to work. The initial snapshot is posted before the message loop starts so callers always read a value.](diagrams/launch.png){ width=6.4in }
+
+Three ordering constraints in this sequence are load-bearing. First, the
+Notifier is obtained and written into the manager's private data (through
+`SetLaunchInputs`) *before* `Launch Root Actor`; a running actor carries the
+copy of its data taken at launch, so a notifier set afterward never reaches the
+running instance. Second, `Launch Nested Actor` returns an updated
+launching-actor terminal (the manager with the new child recorded); that value
+must be threaded onward, or the manager will not stop the child at shutdown.
+Third, the initial snapshot is posted before `Call Parent Method` enters the
+message loop, so `Get Notifier Status` on the caller side always finds a value.
 
 ### 4.4 Parent/child init chain
 
@@ -616,9 +628,11 @@ Three things are independent in LabVIEW, and only one is the API boundary:
 
 - **Disk folders** organize source by concern and by class (a `.lvclass` is a
   folder holding the class and its member VIs). Organization only.
-- **Member access scope** (public, community, protected, private) is the real
-  membrane: it determines what a PPL exposes to adopters, per member, regardless
-  of folder.
+- **Member access scope** (public, protected, private, plus explicit friend
+  declarations) is the real membrane: it determines what a PPL exposes to
+  adopters, per member, regardless of folder. Internal members are `protected`
+  with a `FRIEND` declaration for the non-subclass callers that need them (for
+  example, the test library), rather than the broader `community` scope.
 - **The functions palette** (`.mnu` files) curates which public entry points
   adopters see and how they are grouped. Discoverability only.
 
@@ -670,13 +684,13 @@ are in the Message and Class Reference. This tree shows layout only.
 | Element | Path | Scope |
 |---|---|---|
 | Logger facade | `src/Public/Logger.lvclass/` | public (the API) |
-| LogManager | `src/Core/LogManager.lvclass/` | community |
-| Appender base and concretes | `src/Core/Appender.lvclass/`, `src/Core/Appenders/` | base community; `Init` public, sink members protected |
+| LogManager | `src/Core/LogManager.lvclass/` | protected + friends |
+| Appender base and concretes | `src/Core/Appender.lvclass/`, `src/Core/Appenders/` | base protected + friends; `Init` public, sink members protected |
 | Layouts | `src/Core/Layouts/` | `Create` public, `Format` public DD |
-| Messages | `src/Messages/` | community/private (internal transport) |
+| Messages | `src/Messages/` | protected + friends / private (internal transport) |
 | Type definitions | `src/TypeDefs/` | public where they cross the API (Severity, config clusters, Filter); private otherwise (Snapshot) |
-| Pure helpers (Severity, Enum, Tag, File, Filter) | `src/Support/Severity`, `Enum`, `Tag`, `File`, `Filter` | community (test library is a friend), off the public PPL surface |
-| Config (Merge, Validate, Resolve, mappers) | `src/Support/Config`, `Config/Mapping` | community (test library is a friend), off the public PPL surface |
+| Pure helpers (Severity, Enum, Tag, File, Filter) | `src/Support/Severity`, `Enum`, `Tag`, `File`, `Filter` | protected + friends (test library is a friend), off the public PPL surface |
+| Config (Merge, Validate, Resolve, mappers) | `src/Support/Config`, `Config/Mapping` | protected + friends (test library is a friend), off the public PPL surface |
 | Store and Path helpers | `src/Support/Store`, `Path` | private |
 
 Two placements tie to earlier decisions: the singleton process store is isolated

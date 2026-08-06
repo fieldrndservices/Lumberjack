@@ -12,6 +12,13 @@
 		<Property Name="server.vi.callsEnabled" Type="Bool">true</Property>
 		<Property Name="server.vi.propertiesEnabled" Type="Bool">true</Property>
 		<Property Name="specify.custom.address" Type="Bool">false</Property>
+		<Item Name="examples" Type="Folder">
+			<Item Name="Lumberjack File Test.vi" Type="VI" URL="../examples/Lumberjack File Test.vi"/>
+		</Item>
+		<Item Name="scripts" Type="Folder">
+			<Item Name="PrintLibraryToHTML.vi" Type="VI" URL="../scripts/PrintLibraryToHTML.vi"/>
+		</Item>
+		<Item Name="tests" Type="Folder"/>
 		<Item Name="Lumberjack.lvlib" Type="Library" URL="../src/Lumberjack.lvlib"/>
 		<Item Name="Dependencies" Type="Dependencies"/>
 		<Item Name="Build Specifications" Type="Build"/>
