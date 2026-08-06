@@ -20,6 +20,7 @@
 		</Item>
 		<Item Name="tests" Type="Folder"/>
 		<Item Name="Lumberjack.lvlib" Type="Library" URL="../src/Lumberjack.lvlib"/>
+		<Item Name="Tests.lvlib" Type="Library" URL="../tests/Tests.lvlib"/>
 		<Item Name="Dependencies" Type="Dependencies"/>
 		<Item Name="Build Specifications" Type="Build"/>
 	</Item>

@@ -4,6 +4,9 @@
 	<Property Name="NI.Lib.SourceVersion" Type="Int">637566976</Property>
 	<Property Name="NI.Lib.Version" Type="Str">1.0.0.0</Property>
 	<Property Name="NI.LV.All.SourceOnly" Type="Bool">true</Property>
+	<Item Name="Friends List" Type="Friends List">
+		<Item Name="Tests.lvlib" Type="Friended Library" URL="../../tests/Tests.lvlib"/>
+	</Item>
 	<Item Name="Core" Type="Folder">
 		<Item Name="Appenders" Type="Folder">
 			<Item Name="Appender.lvclass" Type="LVClass" URL="../Core/Appenders/Appender.lvclass/Appender.lvclass">
@@ -92,6 +95,10 @@
 		<Item Name="Filter" Type="Folder">
 			<Property Name="NI.LibItem.Scope" Type="Int">4</Property>
 			<Item Name="RoutedFilterMatch.vi" Type="VI" URL="../Support/Filter/RoutedFilterMatch.vi"/>
+		</Item>
+		<Item Name="JSON" Type="Folder">
+			<Property Name="NI.LibItem.Scope" Type="Int">4</Property>
+			<Item Name="JSONEscapeString.vi" Type="VI" URL="../Support/JSON/JSONEscapeString.vi"/>
 		</Item>
 		<Item Name="Path" Type="Folder">
 			<Property Name="NI.LibItem.Scope" Type="Int">2</Property>
