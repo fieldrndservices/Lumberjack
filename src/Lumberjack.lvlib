@@ -123,6 +123,9 @@
 			<Item Name="DefaultSourceTag.vi" Type="VI" URL="../Support/Tag/DefaultSourceTag.vi"/>
 			<Item Name="Sanitize.vi" Type="VI" URL="../Support/Tag/Sanitize.vi"/>
 		</Item>
+		<Item Name="Time" Type="Folder">
+			<Item Name="FormatTimeString.vi" Type="VI" URL="../Support/Time/FormatTimeString.vi"/>
+		</Item>
 	</Item>
 	<Item Name="TypeDefs" Type="Folder">
 		<Property Name="NI.LibItem.Scope" Type="Int">1</Property>

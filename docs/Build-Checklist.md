@@ -157,6 +157,17 @@ concretes exist, before the manager or facade.*
 
 ## Phase 8 - Surface and packaging
 
+- [ ] 28a. Extract the pure helpers into a `Support.lvlib` sub-library: `Enum`,
+      `File`, `Filter`, `Severity`, `Tag`, `Path`, and the layout
+      `FormatTimeString` (decide whether `Config` and `Store` join or stay in
+      Core). Give the library its own icon banner so member VIs inherit it.
+      Scope `Support.lvlib` private within `Lumberjack.lvlib` (off the public PPL
+      surface) and make `Tests.lvlib` a friend of `Support.lvlib` only, replacing
+      the current library-wide friend edge. Do the moves in the IDE so callers,
+      friend declarations, and the project relink; qualified names change
+      (`Lumberjack.lvlib:X` to `...Support.lvlib:X`), so regenerate the HTML
+      report afterward. Precedes the palette (29) and PPL packaging (32) because
+      it changes namespaces. (Structural refactor; no behavior change.)
 - [ ] 29. Curated palette `.mnu` files (Action-Status, Appenders, Configure,
       Data, Utility).
 - [ ] 30. `examples/`: Simple, Two Files, Routed by tag, Relay to UI actor.
