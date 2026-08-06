@@ -22,5 +22,5 @@ desktop.ini
 # Uncomment if you prefer to regenerate rather than commit them:
 docs/*.docx
 docs/*.pdf
-docs/*.html
+docs/HTMLReport/*.html
 docs/HTMLReport/images/*.jpg
