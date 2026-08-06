@@ -23,4 +23,4 @@ desktop.ini
 docs/*.docx
 docs/*.pdf
 docs/*.html
-docs/images/*.jpg
+docs/HTMLReport/images/*.jpg
