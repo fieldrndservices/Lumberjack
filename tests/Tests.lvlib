@@ -18,6 +18,7 @@
 		<Item Name="Layout - CSV quoting.vi" Type="VI" URL="../Unit/Layout - CSV quoting.vi"/>
 		<Item Name="Layout - ISO 8601 timestamp.vi" Type="VI" URL="../Unit/Layout - ISO 8601 timestamp.vi"/>
 		<Item Name="Layout - JSON escape string.vi" Type="VI" URL="../Unit/Layout - JSON escape string.vi"/>
+		<Item Name="Layout - JSON Format.vi" Type="VI" URL="../Unit/Layout - JSON Format.vi"/>
 		<Item Name="Severity - name round trip.vi" Type="VI" URL="../Unit/Severity - name round trip.vi"/>
 		<Item Name="Severity - rank compare.vi" Type="VI" URL="../Unit/Severity - rank compare.vi"/>
 	</Item>
