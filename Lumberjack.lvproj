@@ -18,7 +18,6 @@
 		<Item Name="scripts" Type="Folder">
 			<Item Name="PrintLibraryToHTML.vi" Type="VI" URL="../scripts/PrintLibraryToHTML.vi"/>
 		</Item>
-		<Item Name="tests" Type="Folder"/>
 		<Item Name="Lumberjack.lvlib" Type="Library" URL="../src/Lumberjack.lvlib"/>
 		<Item Name="Tests.lvlib" Type="Library" URL="../tests/Tests.lvlib"/>
 		<Item Name="Dependencies" Type="Dependencies"/>

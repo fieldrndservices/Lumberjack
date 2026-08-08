@@ -1,13 +1,14 @@
-# PR Notes: JSONLayout / Test Framework
+# PR Notes: JSONLayout / Test Framework / ConfigReader Design
 
 **Branch:** `JSONLayout_test_framework_configreader_design`
 
 **Base:** rebaselined onto `origin/main` after the RoutingLayer PR (#4) merged, so
 this PR's diff is only the increment below, not a re-introduction of RoutingLayer.
 
-**Scope note:** the ConfigReader design (the "configreader_design" in the branch
-name) is **deferred to a follow-up PR**. This PR delivers JSONLayout and the test
-framework.
+**Scope note:** this PR covers JSONLayout, the test framework, and the ConfigReader
+**design** (Design §4.5). The design write-up was started but is not yet finished
+and stays in this PR. The ConfigReader *implementation* (Build-Checklist F1-F4)
+remains post-1.0 backlog.
 
 **Status:** Draft. All entered descriptions and drafted test/code content remain
 subject to SOP-117 human review before being treated as authoritative.
@@ -90,7 +91,9 @@ than the binary diff.
 - **Integration tier (next up this PR):** temp-root `SetUp` / `TearDown` fixtures
   (`tests/Support/`) and launched-actor tests (`tests/Integration/`), broadcast,
   register/unregister, relay delivery, rollover, flush-on-shutdown.
-- **ConfigReader design (Design §4.5):** deferred to a follow-up PR.
+- **ConfigReader design (Design §4.5):** started, not finished; to be completed in
+  this PR before review. Design write-up only, the implementation (F1-F4) stays
+  post-1.0 backlog.
 - **`Support.lvlib` extraction:** Build-Checklist item 28a, a separate structural
   refactor to do before the project is considered done, not in this PR.
 - **Optional additional unit tests:** CSV column order, tag `Sanitize`.

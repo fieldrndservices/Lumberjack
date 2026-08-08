@@ -221,6 +221,20 @@ concretes exist, before the manager or facade.*
       members. Keep `Base+99` within the 5000-9999 user range for any chosen
       base.
 
+      Fault-raising mechanism (design): route every fault through one chokepoint
+      helper instead of hard-coding absolute codes. The helper takes an
+      error-code enum member (or offset) plus a context string, adds
+      `LumberjackErrorBase`, looks up the registered message, and raises. Call
+      sites reference the fault by name (no magic numbers); the enum plus its
+      messages are the single source of truth and generate the error-text file.
+      Keep the code explicit (from the enum), NOT derived from the owning VI's
+      identity, one VI can raise several codes (OpenSink raises 5026 in two
+      branches; ValidateAppenderConfigDTO raises 5022/5024/5025). Use the
+      owning-VI context only for the error `source` field (auto-captured caller VI
+      name). The reconciled `docs/Error-Codes.md` registry is the spec; once the
+      helper exists, refactor the existing inline sites (5000, 5010-5012, 5020-5025,
+      5026, 5027-5029) to call it.
+
 ---
 
 **Test milestones**
