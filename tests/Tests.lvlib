@@ -11,12 +11,14 @@
 		<Item Name="Lumberjack.lvlib" Type="Friended Library" URL="../../src/Lumberjack.lvlib"/>
 	</Item>
 	<Item Name="Integration" Type="Folder">
+		<Item Name="Delivery - broadcast.vi" Type="VI" URL="../Integration/Delivery - broadcast.vi"/>
 		<Item Name="Delivery - single appender.vi" Type="VI" URL="../Integration/Delivery - single appender.vi"/>
 	</Item>
 	<Item Name="Support" Type="Folder">
 		<Property Name="NI.LibItem.Scope" Type="Int">2</Property>
 		<Item Name="Close test manager.vi" Type="VI" URL="../Support/Close test manager.vi"/>
 		<Item Name="Open test manager.vi" Type="VI" URL="../Support/Open test manager.vi"/>
+		<Item Name="Register Relay Appender.vi" Type="VI" URL="../Support/Register Relay Appender.vi"/>
 		<Item Name="Setup - create temp root.vi" Type="VI" URL="../Support/Setup - create temp root.vi"/>
 		<Item Name="Tear Down - delete root temp.vi" Type="VI" URL="../Support/Tear Down - delete root temp.vi"/>
 	</Item>
