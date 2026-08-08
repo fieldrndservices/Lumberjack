@@ -38,6 +38,24 @@ New library VIs:
 - `src/Support/JSON/JSONEscapeString.vi` (JSON string-literal escaper, community)
 - `src/Support/Time/FormatTimeString.vi` (shared ISO 8601 timestamp helper,
   ms precision, Z/offset per useUTC)
+- `src/Public/Logger.lvclass/WaitForSnapshot.vi` (private): synchronous readiness
+  barrier. Waits on the manager's Snapshot notifier until `appenderEnqueuers`
+  count reaches `minEnqueuers` (or a bounded timeout → error 5030). Deadline-based
+  loop (`deadline = start + timeout`; each iteration waits the remaining time),
+  so total wait is bounded. Outputs a valid Snapshot only on the met path; on
+  timeout, `error out` (5030) is the authoritative signal.
+
+Test-support fixtures/helpers (`tests/Support/`):
+
+- `Open Test Mgr.vi` — reduced to `Initialize` only (`enableDefaultFile=FALSE`):
+  brings the manager to the "ready, empty" baseline and returns the logger. No
+  longer registers an appender or creates a temp root (decoupled).
+- `Register Relay Appender.vi` — Arrange helper: builds a queue-mode relay
+  appender for a given `id` (optional `filter`/`queueBound` inputs; defaults
+  Mirror/permissive and `-1`), registers it (blocks on `WaitForSnapshot`), and
+  returns the named-queue refnum via `Read relayQueue` for the test to drain.
+- `Close Test Mgr.vi`, `Setup - create temp root.vi`, `Tear Down - delete root
+  temp.vi` — composed per test (relay-queue tests need no temp root).
 
 Documentation:
 
@@ -58,6 +76,22 @@ Documentation:
   typedefs (native and DTO mirrors), including renaming the DTO `fileConfig` field
   to `file` to mirror the native side. Full inventory in `Doc-Terminal-Audit.md`
   sections 2 and 4.
+- **`Logger.Initialize` wired to `WaitForSnapshot`** (readiness, `minEnqueuers=0`):
+  returns only once the manager has posted its initial Snapshot, so the returned
+  logger is ready to log. A manager that dies on entry never posts → `Initialize`
+  returns 5030 (loud) instead of a dead-but-valid-looking logger. Confirmed both
+  directions (`enableDefaultFile=FALSE` → clean; `=TRUE` empty-id default → 5030).
+- **`Logger.RegisterAppender` wired to `WaitForSnapshot`** (`minEnqueuers=preCount+1`):
+  reads the pre-count, sends, then blocks until the appender appears in a Snapshot,
+  so callers can log to it deterministically. Whole peek/send/wait sequence sits
+  inside the manager-enqueuer valid-refnum case; no-op passthrough (5029) otherwise.
+  This replaced the flaky 1 s fixture delay.
+- **`enableDefaultFile` validation gating** (5024 fix): `ValidateLumberjackConfigDTO`
+  now gates the default-file validator chain on `enableDefaultFile`, so a disabled
+  default file is neither resolved nor validated. Corrects the earlier silent
+  manager death on an empty-id default config.
+- **`Appender.GetID` promoted to public** (read-only id accessor; dissolves a
+  friend-scope issue for `Logger`/tests rather than adding friend edges).
 
 ---
 
@@ -88,9 +122,12 @@ than the binary diff.
 
 ## 4. Still open
 
-- **Integration tier (next up this PR):** temp-root `SetUp` / `TearDown` fixtures
-  (`tests/Support/`) and launched-actor tests (`tests/Integration/`), broadcast,
-  register/unregister, relay delivery, rollover, flush-on-shutdown.
+- **Integration tier (in progress):** fixtures/helpers built (`Open Test Mgr`,
+  `Register Relay Appender`, temp-root setup/teardown). Passing on the decoupled
+  fixture + helper: **Delivery - single appender** and **Broadcast - fan-out**
+  (3 appenders, identical-payload + exactly-once asserts), both relay queue mode.
+  Remaining launched-actor tests: register/unregister, relay message-mode,
+  rollover, flush-on-shutdown.
 - **ConfigReader design (Design §4.5):** started, not finished; to be completed in
   this PR before review. Design write-up only, the implementation (F1-F4) stays
   post-1.0 backlog.
