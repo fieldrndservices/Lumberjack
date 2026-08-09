@@ -150,5 +150,7 @@
 		<Item Name="Snapshot.ctl" Type="VI" URL="../TypeDefs/Snapshot.ctl"/>
 		<Item Name="FileConfig.ctl" Type="VI" URL="../TypeDefs/FileConfig.ctl"/>
 		<Item Name="RegistryEntry.ctl" Type="VI" URL="../TypeDefs/RegistryEntry.ctl"/>
+		<Item Name="SnapshotWaitMode.ctl" Type="VI" URL="../TypeDefs/SnapshotWaitMode.ctl"/>
+		<Item Name="ManagerLaunchInputs.ctl" Type="VI" URL="../TypeDefs/ManagerLaunchInputs.ctl"/>
 	</Item>
 </Library>

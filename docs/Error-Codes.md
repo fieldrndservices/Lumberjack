@@ -47,7 +47,9 @@ test (Y/N).
 | +28 | 5028 | Warning | `LogManager.ConfigureAppender` | Appender id not found | Y | N |
 | +29 | 5029 | Warning | `Logger.ResolveLogger` | No wired instance and no process default (call is a no-op) | Y | N |
 | +30 | 5030 | Error | `WaitForSnapshot` (via Initialize / RegisterAppender) | Expected Snapshot not confirmed within timeout (readiness or registration) | Y (Initialize + RegisterAppender both wired; Initialize confirmed both directions) | N |
-| +31..39 | 5031-5039 | - | reserved | Reserved for other checks | - | - |
+| +31 | 5031 | - | reserved | Reserved for finer-grained register failure (to split out of 5030 later) | - | - |
+| +32 | 5032 | Error | `Logger.Shutdown` (manager-stop barrier) | Manager (and nested appenders) did not stop within timeout | Y (Shutdown wired; happy path exercised by integration teardown) | N |
+| +33..39 | 5033-5039 | - | reserved | Reserved for other checks | - | - |
 
 ---
 
