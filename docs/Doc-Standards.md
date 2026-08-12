@@ -21,7 +21,11 @@ reference.
   (public / community / protected / private) and any friend relationship.
 - **VI Documentation** — the description shown in Context Help: what the VI does
   and why, in a few sentences. This is the text entered in the VI's own
-  Documentation field.
+  Documentation field. When written up for paste (e.g. in `Cleanup-Suggested-Text`),
+  present it in a **literal/fenced code block with one line per paragraph** (no
+  hard mid-sentence wraps), so it copies into the LabVIEW Documentation field
+  without soft-wrap line breaks turning into literal newlines. LabVIEW does its own
+  wrapping.
 - **Connector Pane** — the terminals: inputs and outputs, with types. Note when
   the error cluster is present, and any deliberate omission (e.g. a pure helper
   with no error terminals).

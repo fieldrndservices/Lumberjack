@@ -127,6 +127,18 @@ Therefore:
 - Concurrency and backpressure-under-load are verified by testing the
   drop-policy selection as a pure VI (deterministic) and asserting the synthetic
   drop-notice record appears, rather than by racing producer threads.
+- Lifecycle transitions use the library's **synchronous confirmation barriers**
+  (Design §5.11), not sleeps: `Open Test Mgr`/`Initialize` blocks on readiness,
+  `Register Relay Appender`/`RegisterAppender` on the appender id appearing,
+  `UnregisterAppender` on it leaving, and `Close Test Mgr`/`Shutdown` on the actor
+  tree stopping. This is what makes drain-then-assert deterministic without timing
+  guesses. (The one earlier 1 s fixture sleep was removed once these landed.)
+- **Integration tests must run sequentially.** They share process-global state,
+  the process-default logger/manager and the named relay queues, so running two at
+  once cross-contaminates (a queue in one test receives another test's statement).
+  `Close Test Mgr` tears down its manager and force-destroys its queues so the next
+  sequential test starts clean. Unit tests are pure (no launched framework, no
+  shared globals) and may run in parallel.
 
 ---
 

@@ -38,12 +38,24 @@ New library VIs:
 - `src/Support/JSON/JSONEscapeString.vi` (JSON string-literal escaper, community)
 - `src/Support/Time/FormatTimeString.vi` (shared ISO 8601 timestamp helper,
   ms precision, Z/offset per useUTC)
-- `src/Public/Logger.lvclass/WaitForSnapshot.vi` (private): synchronous readiness
-  barrier. Waits on the manager's Snapshot notifier until `appenderEnqueuers`
-  count reaches `minEnqueuers` (or a bounded timeout → error 5030). Deadline-based
-  loop (`deadline = start + timeout`; each iteration waits the remaining time),
-  so total wait is bounded. Outputs a valid Snapshot only on the met path; on
-  timeout, `error out` (5030) is the authoritative signal.
+- `src/Public/Logger.lvclass/WaitForSnapshot.vi` (private): synchronous barrier
+  on the Snapshot notifier. Blocks until a predicate over the Snapshot holds, or a
+  bounded deadline expires (error 5030). Predicate via `SnapshotWaitMode`:
+  `AnySnapshot` (readiness), `IDPresent` (a `targetID` appears), `IDAbsent` (a
+  `targetID` is gone / never present). Id-based, not count-based, so it's robust to
+  ordering/concurrency and needs no pre-count. Deadline loop
+  (`deadline = start + timeout`, each wait consumes the remaining time). Outputs a
+  valid Snapshot only on the met path.
+- `src/Public/Logger.lvclass/SnapshotHasID.vi` (private): pure predicate, scans a
+  Snapshot's `appenders` array for an exact id; short-circuits on match. Used by
+  `WaitForSnapshot` for the `IDPresent`/`IDAbsent` modes.
+- `src/TypeDefs/SnapshotWaitMode.ctl`: enum (`AnySnapshot`/`IDPresent`/`IDAbsent`)
+  selecting the barrier condition.
+- `src/TypeDefs/ManagerLaunchInputs.ctl`: bundles the manager launch inputs
+  (threshold, host/config paths, `snapshotNotifier`, `stoppedNotifier`) into one
+  cluster, so `SetLaunchInputs` doesn't run out of connector-pane terminals.
+- `src/Public/Logger.lvclass/ClearProcessDefault.vi`: clears the process-default
+  logger (used by `Shutdown`).
 
 Test-support fixtures/helpers (`tests/Support/`):
 
@@ -54,8 +66,14 @@ Test-support fixtures/helpers (`tests/Support/`):
   appender for a given `id` (optional `filter`/`queueBound` inputs; defaults
   Mirror/permissive and `-1`), registers it (blocks on `WaitForSnapshot`), and
   returns the named-queue refnum via `Read relayQueue` for the test to drain.
-- `Close Test Mgr.vi`, `Setup - create temp root.vi`, `Tear Down - delete root
-  temp.vi` — composed per test (relay-queue tests need no temp root).
+- `Close Test Mgr.vi` — synchronous `Shutdown`, then force-destroys the test's
+  relay queues via `Release Relay Queues`.
+- `Release Relay Queues.vi` — takes `queueIDList` (array of String), obtains each
+  named queue (`RelayQueueName`, `Statement`, create=FALSE) and force-destroys it;
+  missing queue is a no-op (clears error 1100). Keeps the process-global namespace
+  clean between tests.
+- `Setup - create temp root.vi`, `Tear Down - delete root temp.vi` — composed per
+  test (relay-queue tests need no temp root).
 
 Documentation:
 
@@ -76,16 +94,37 @@ Documentation:
   typedefs (native and DTO mirrors), including renaming the DTO `fileConfig` field
   to `file` to mirror the native side. Full inventory in `Doc-Terminal-Audit.md`
   sections 2 and 4.
-- **`Logger.Initialize` wired to `WaitForSnapshot`** (readiness, `minEnqueuers=0`):
+- **`Snapshot` reshaped to carry ids:** the fan-out array is now `appenders`, an
+  array of `RegistryEntry {id, enqueuer}` (was a bare enqueuer array), so barriers
+  can key on a specific appender's presence/absence. `Log`'s fan-out unbundles
+  `.enqueuer`; `PostSnapshot` builds the array from the registry.
+- **`Logger.Initialize` wired to `WaitForSnapshot`** (`AnySnapshot` readiness):
   returns only once the manager has posted its initial Snapshot, so the returned
   logger is ready to log. A manager that dies on entry never posts → `Initialize`
   returns 5030 (loud) instead of a dead-but-valid-looking logger. Confirmed both
   directions (`enableDefaultFile=FALSE` → clean; `=TRUE` empty-id default → 5030).
-- **`Logger.RegisterAppender` wired to `WaitForSnapshot`** (`minEnqueuers=preCount+1`):
-  reads the pre-count, sends, then blocks until the appender appears in a Snapshot,
-  so callers can log to it deterministically. Whole peek/send/wait sequence sits
-  inside the manager-enqueuer valid-refnum case; no-op passthrough (5029) otherwise.
-  This replaced the flaky 1 s fixture delay.
+- **`Logger.RegisterAppender` wired to `WaitForSnapshot`** (`IDPresent`, `targetID`
+  = the appender id from `GetID`): sends, then blocks until that id appears in a
+  Snapshot, so callers can log to it deterministically. No pre-count. Sits inside
+  the manager-enqueuer valid-refnum case; no-op passthrough (5029) otherwise.
+  Replaced the flaky 1 s fixture delay.
+- **`Logger.UnregisterAppender` wired to `WaitForSnapshot`** (`IDAbsent`): sends,
+  then blocks until the id is gone. Unknown id is a benign immediate no-op
+  (`IDAbsent` already satisfied), no false timeout.
+- **`Logger.Shutdown` made synchronous** via a second notifier: the manager fires
+  `stoppedNotifier` (error cluster) at `Actor Core` exit, after AF has stopped the
+  nested appenders. `Shutdown` sends Stop, waits (bounded → error **5032**), merges
+  the exit error, releases both notifiers, and clears the process default. This is
+  what lets teardown safely reclaim application-owned relay queues after stop.
+- **`RelayAppender.RelayQueueName` promoted to public** so test teardown can derive
+  queue names from the one source of truth.
+- **`Appender.HandleStatement` routed-filter bug fixed:** the Routed branch called
+  `RoutedFilterMatch` but the `Statement` input was not wired, so it always judged a
+  default record and effectively passed everything (Mirror was unaffected since it
+  skips the filter). Wired the Statement through; the routed level band + tag now
+  gate correctly. Caught by the `Relay - filtered tap` integration test (the
+  `RoutedFilterMatch` unit tests passed because the predicate itself was correct;
+  only the shipped caller was mis-wired).
 - **`enableDefaultFile` validation gating** (5024 fix): `ValidateLumberjackConfigDTO`
   now gates the default-file validator chain on `enableDefaultFile`, so a disabled
   default file is neither resolved nor validated. Corrects the earlier silent
@@ -123,11 +162,18 @@ than the binary diff.
 ## 4. Still open
 
 - **Integration tier (in progress):** fixtures/helpers built (`Open Test Mgr`,
-  `Register Relay Appender`, temp-root setup/teardown). Passing on the decoupled
-  fixture + helper: **Delivery - single appender** and **Broadcast - fan-out**
-  (3 appenders, identical-payload + exactly-once asserts), both relay queue mode.
-  Remaining launched-actor tests: register/unregister, relay message-mode,
-  rollover, flush-on-shutdown.
+  `Register Relay Appender`, `Release Relay Queues`, temp-root setup/teardown).
+  Passing: **Delivery - single appender**, **Broadcast - fan-out**, **Registry -
+  unregister silences appender** (incl. the unknown-id no-op), **Relay - message
+  mode** (via a standalone queue-mode consumer, `Launch Consumer Relay`), and
+  **Relay - filtered tap** (Routed band drops out-of-band levels). **Integration
+  tests must run sequentially** (they share process-global state: the default logger
+  and named relay queues); unit tests run parallel. Remaining launched-actor tests:
+  file mechanics (two files, rollover, calendar tree), fault isolation, per-appender
+  threshold, shutdown flush / shutdown-on-error, CatchError.
+- **Doc-Terminal-Audit re-opened:** the barrier/shutdown VIs introduced
+  description gaps and stale count-based text; see `Doc-Terminal-Audit.md` §5 for
+  the fix list to clear before submitting.
 - **ConfigReader design (Design §4.5):** started, not finished; to be completed in
   this PR before review. Design write-up only, the implementation (F1-F4) stays
   post-1.0 backlog.

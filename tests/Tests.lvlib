@@ -14,10 +14,13 @@
 		<Item Name="Delivery - broadcast.vi" Type="VI" URL="../Integration/Delivery - broadcast.vi"/>
 		<Item Name="Delivery - single appender.vi" Type="VI" URL="../Integration/Delivery - single appender.vi"/>
 		<Item Name="Registry - unregister silences appender.vi" Type="VI" URL="../Integration/Registry - unregister silences appender.vi"/>
+		<Item Name="Relay - filtered tap.vi" Type="VI" URL="../Integration/Relay - filtered tap.vi"/>
+		<Item Name="Relay - Message Mode.vi" Type="VI" URL="../Integration/Relay - Message Mode.vi"/>
 	</Item>
 	<Item Name="Support" Type="Folder">
 		<Property Name="NI.LibItem.Scope" Type="Int">2</Property>
 		<Item Name="Close test manager.vi" Type="VI" URL="../Support/Close test manager.vi"/>
+		<Item Name="Launch Consumer Relay.vi" Type="VI" URL="../Support/Launch Consumer Relay.vi"/>
 		<Item Name="Open test manager.vi" Type="VI" URL="../Support/Open test manager.vi"/>
 		<Item Name="Register Relay Appender.vi" Type="VI" URL="../Support/Register Relay Appender.vi"/>
 		<Item Name="Release Relay Queues.vi" Type="VI" URL="../Support/Release Relay Queues.vi"/>

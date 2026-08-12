@@ -159,7 +159,7 @@ The Notifier payload broadcast to callers (SDD 2.1).
 | Field | Type | Notes |
 |---|---|---|
 | globalThreshold | Severity | stage-1 coarse threshold |
-| appenderEnqueuers | Array of Enqueuer | current broadcast targets |
+| appenders | Array of `RegistryEntry` (`{id, enqueuer}`) | current broadcast targets; id travels with the enqueuer so barriers can key on a specific appender (SDD 5.11). The hot path fans out over `.enqueuer`. |
 
 ### 2.11 Config DTO (JSON unflatten target)
 For each native config cluster there is a string-typed mirror used only as the
@@ -186,37 +186,43 @@ By-value caller facade. Wraps the shared references and provides the public API.
 Not an actor.
 
 - **Inherits:** LabVIEW Object.
-- **Private data:** `notifier` (Notifier refnum for the Snapshot),
+- **Private data:** `snapshotNotifier` (Notifier of Snapshot, data plane +
+  barriers), `stoppedNotifier` (Notifier of error cluster, shutdown barrier),
   `managerEnqueuer` (Enqueuer to the LogManager).
 
 | Member | Scope | Dispatch | Description |
 |---|---|---|---|
-| Initialize | public | static | Launch the LogManager, resolve config, launch the default file appender, post the initial Snapshot; return the instance and store it as the process default. |
+| Initialize | public | static | Obtain both notifiers, launch the LogManager (which resolves config, launches the default file appender, posts the initial Snapshot), then block on `WaitForSnapshot(AnySnapshot)` so the returned logger is ready; a manager that dies on entry surfaces as error 5030. Store the instance as the process default. |
 | Log | public | static | Core log: resolve instance, read Snapshot, apply stage-1 threshold, build Statement, fan out to enqueuers. |
 | Trace / Debug / Info / Warn / Error / Fatal | public | static | Thin wrappers over `Log` at a fixed level (SRS-LMBR-016). |
 | ConfigureLevel | public | static | Post an updated Snapshot with a new global threshold (SRS-LMBR-008). |
 | ConfigureVerbosity | public | static | Set the dialog-verbosity for CatchError (SRS-LMBR-042). |
-| RegisterAppender | public | static | Send `RegisterAppenderMsg` to the manager. |
-| UnregisterAppender | public | static | Send `UnregisterAppenderMsg`. |
+| RegisterAppender | public | static | Send `RegisterAppenderMsg`, then block on `WaitForSnapshot(IDPresent, id)` so the appender is live on return (SDD 5.11). |
+| UnregisterAppender | public | static | Send `UnregisterAppenderMsg`, then block on `WaitForSnapshot(IDAbsent, id)`; unknown id is a benign no-op (+28). |
 | ConfigureAppender | public | static | Send `ConfigureAppenderMsg`. |
 | CatchError | public | static | General-error-handler integration; log and optionally display (SRS-LMBR-041). |
-| Shutdown | public | static | Send framework Stop to the manager (SRS-LMBR-002). |
+| Shutdown | public | static | Synchronous: send framework Stop, wait on `stoppedNotifier` until the actor tree stops (bounded, error 5032), merge the exit error, release both notifiers, clear the process default (SRS-LMBR-002, SDD 5.10-5.11). |
+| WaitForSnapshot | private | static | Barrier on `snapshotNotifier`: block until the `SnapshotWaitMode` predicate (AnySnapshot / IDPresent / IDAbsent) holds or the timeout expires (error 5030). |
+| SnapshotHasID | private | static | Pure predicate: is an appender `id` present in a Snapshot's `appenders` array. |
+| ClearProcessDefault | private | static | Clear the process-default logger (used by `Shutdown`). |
 | ResolveLogger | private | static | Return the wired instance or fetch the process default (singleton support, SDD 2.4). |
 
 ### 3.2 LogManager.lvclass
 Root actor; owns the control plane and is the sole poster of the Snapshot.
 
 - **Inherits:** Actor.lvclass.
-- **Private data:** `notifier` (Snapshot Notifier), `registry` (array of {id,
-  Enqueuer, Appender-nested-actor handle}), `globalThreshold`, resolved
-  `LumberjackConfig`.
+- **Private data:** `snapshotNotifier` (Notifier of Snapshot), `stoppedNotifier`
+  (Notifier of error cluster, fired at Actor Core exit), `registry` (array of
+  `RegistryEntry` {id, Enqueuer} plus the nested-actor handle), `globalThreshold`,
+  resolved `LumberjackConfig`. Launch inputs arrive bundled as
+  `ManagerLaunchInputs`.
 
 | Member | Scope | Dispatch | Description |
 |---|---|---|---|
-| Actor Core | protected | override | On entry: resolve config, launch default file appender, post initial Snapshot. Then run the framework message loop. |
+| Actor Core | protected | override | On entry: resolve config, launch default file appender, post initial Snapshot. Run the framework message loop. On exit (after nested appenders stop): fire `stoppedNotifier` with the exit error (SDD 5.10-5.11). |
 | ResolveConfig | private | static | Merge launch inputs with the JSON file (native Unflatten with baseline as default value); validate; produce effective config (SRS-LMBR-044-051). |
 | LaunchAppender | private | static | Launch an Appender object as a nested actor, capture its enqueuer, add to registry. |
-| PostSnapshot | private | static | Send the current {threshold, enqueuer array} to the Notifier. |
+| PostSnapshot | private | static | Send the current `{globalThreshold, appenders}` Snapshot to the notifier, where `appenders` is the registry's `RegistryEntry {id, enqueuer}` array. |
 | HandleStop | protected | override | Stop all nested appenders (each flushes and closes), then stop (SRS-LMBR-002, 004). |
 
 ### 3.3 Appender.lvclass (abstract)
@@ -243,7 +249,7 @@ specifics to subclasses (SRS-LMBR-018).
 Writes statements to rolling, retained log files.
 
 - **Inherits:** Appender.lvclass.
-- **Private data:** `layout` (Layout, default `CSVLayout`), `fileConfig`
+- **Private data:** `layout` (Layout, default `CSVLayout`), `file`
   (FileConfig - the resolved file-specific fields), `currentFileRefnum`,
   `currentFileSize`, `currentFolder`.
 

@@ -1,87 +1,98 @@
-8/8/2026 10:06:32 PM - PASS - Tests.lvlib:Test.vi - 
-8/8/2026 10:06:32 PM - PASS - Tests.lvlib:All Unit Tests - Tests.lvlib:Delivery - single appender.vi
-8/8/2026 10:06:32 PM - PASS -         Tests.lvlib:Delivery - single appender.vi - Tests.lvlib:Delivery - single appender.vi
-8/8/2026 10:06:32 PM - PASS -           Statement delivered within timeout
-8/8/2026 10:06:32 PM - PASS -           Delivered message matches
-8/8/2026 10:06:32 PM - PASS -         Tests.lvlib:Severity - rank compare.vi - Tests.lvlib:Severity - rank compare.vi
-8/8/2026 10:06:32 PM - PASS -           ALL threshold passes every level (TRACE)
-8/8/2026 10:06:32 PM - PASS -           Rank <= threshold passes (ERROR vs WARN)
-8/8/2026 10:06:32 PM - PASS -           Below threshold dropped (DEBUG vs INFO)
-8/8/2026 10:06:32 PM - PASS -           Equal-rank boundary passes (INFO vs INFO)
-8/8/2026 10:06:32 PM - PASS -           OFF threshold disables all (FATAL)
-8/8/2026 10:06:32 PM - PASS -         Tests.lvlib:Filter - tag prefix.vi - Tests.lvlib:Filter - tag prefix.vi
-8/8/2026 10:06:32 PM - PASS -           Tag shorter than prefix does not match
-8/8/2026 10:06:32 PM - PASS -           Exact tag matches
-8/8/2026 10:06:32 PM - PASS -           Child tag matches on dot boundary
-8/8/2026 10:06:32 PM - PASS -           Empty prefix matches any
-8/8/2026 10:06:32 PM - PASS -           Sibling tag does not match (no dot boundary)
-8/8/2026 10:06:32 PM - PASS -         Tests.lvlib:Filter - level range.vi - Tests.lvlib:Filter - level range.vi
-8/8/2026 10:06:32 PM - PASS -           In-band level with non-matching tag rejected (AND)
-8/8/2026 10:06:32 PM - PASS -           Single-level band accepts that level
-8/8/2026 10:06:32 PM - PASS -           Single-level band rejects a more-severe level
-8/8/2026 10:06:32 PM - PASS -           Level more severe than band is rejected
-8/8/2026 10:06:32 PM - PASS -           Level less severe than band is rejected
-8/8/2026 10:06:32 PM - PASS -           Level within band is accepted
-8/8/2026 10:06:32 PM - PASS -         Tests.lvlib:Layout - CSV quoting.vi - Tests.lvlib:Layout - CSV quoting.vi
-8/8/2026 10:06:32 PM - PASS -           Configured delimiter forces quoting
-8/8/2026 10:06:32 PM - PASS -           Plain field is not quoted
-8/8/2026 10:06:32 PM - PASS -           Embedded quote doubled and wrapped
-8/8/2026 10:06:32 PM - PASS -           Delimiter in field forces quoting
-8/8/2026 10:06:32 PM - PASS -           Newline forces quoting
-8/8/2026 10:06:32 PM - PASS -           Comma not quoted when delimiter is Tab
-8/8/2026 10:06:32 PM - PASS -         Tests.lvlib:Layout - JSON escape string.vi - Tests.lvlib:Layout - JSON escape string.vi
-8/8/2026 10:06:32 PM - PASS -           Backslash escaped before quote (ordering)
-8/8/2026 10:06:32 PM - PASS -           Newline becomes backslash-n
-8/8/2026 10:06:32 PM - PASS -           Double quote is escaped
-8/8/2026 10:06:32 PM - PASS -           Backslash is doubled
-8/8/2026 10:06:32 PM - PASS -           Other control char becomes \u00xx
-8/8/2026 10:06:32 PM - PASS -           Empty string yields a pair of quotes
-8/8/2026 10:06:32 PM - PASS -           Plain string is just quoted
-8/8/2026 10:06:32 PM - PASS -         Tests.lvlib:Severity - name round trip.vi - Tests.lvlib:Severity - name round trip.vi
-8/8/2026 10:06:32 PM - PASS -           Unknown name faults
-8/8/2026 10:06:32 PM - PASS -           Enum to name: FATAL
-8/8/2026 10:06:32 PM - PASS -           Name to enum: FATAL
-8/8/2026 10:06:32 PM - PASS -           Enum to name: INFO
-8/8/2026 10:06:32 PM - PASS -           Name to enum: OFF (sentinel)
-8/8/2026 10:06:32 PM - PASS -           Enum to name: ALL (sentinel)
-8/8/2026 10:06:32 PM - PASS -           Name to enum: TRACE
-8/8/2026 10:06:32 PM - PASS -         Tests.lvlib:Layout - ISO 8601 timestamp.vi - Tests.lvlib:Layout - ISO 8601 timestamp.vi
-8/8/2026 10:06:32 PM - PASS -           Millisecond fraction rendered (.125)
-8/8/2026 10:06:32 PM - PASS -           Local instant renders its wall-clock
-8/8/2026 10:06:32 PM - PASS -           UTC instant formats with Z
-8/8/2026 10:06:32 PM - PASS -         Tests.lvlib:Layout - JSON Format.vi - Tests.lvlib:Layout - JSON Format.vi
-8/8/2026 10:06:32 PM - PASS -           Full statement emits all keys in order
-8/8/2026 10:06:32 PM - PASS -           Empty attributes are omitted
-8/8/2026 10:06:32 PM - PASS -           Message is JSON-escaped
-8/8/2026 10:06:32 PM - PASS -           Empty msg is still present
-8/8/2026 10:06:32 PM - PASS -         Tests.lvlib:Delivery - broadcast.vi - Tests.lvlib:Delivery - broadcast.vi
-8/8/2026 10:06:32 PM - PASS -           relayA element received
-8/8/2026 10:06:32 PM - PASS -           relayA msg = "broadcast-probe"
-8/8/2026 10:06:32 PM - PASS -           relayA level = "INFO"
-8/8/2026 10:06:32 PM - PASS -           relayA sourceTag = "BCAST"
-8/8/2026 10:06:32 PM - PASS -           Appender 'relayA' single delivery
-8/8/2026 10:06:32 PM - PASS -           relayB element received
-8/8/2026 10:06:32 PM - PASS -           relayB msg = "broadcast-probe"
-8/8/2026 10:06:32 PM - PASS -           relayB level = "INFO"
-8/8/2026 10:06:32 PM - PASS -           relayB sourceTag = "BCAST"
-8/8/2026 10:06:32 PM - PASS -           Appender 'relayB' single delivery
-8/8/2026 10:06:32 PM - PASS -           relayC element received
-8/8/2026 10:06:32 PM - PASS -           relayC msg = "broadcast-probe"
-8/8/2026 10:06:32 PM - PASS -           relayC level = "INFO"
-8/8/2026 10:06:32 PM - PASS -           relayC sourceTag = "BCAST"
-8/8/2026 10:06:32 PM - PASS -           Appender 'relayC' single delivery
-8/8/2026 10:06:32 PM - PASS -         Tests.lvlib:Registry - unregister silences appender.vi - Tests.lvlib:Registry - unregister silences appender.vi
-8/8/2026 10:06:32 PM - PASS -           relayA element received
-8/8/2026 10:06:32 PM - PASS -           relayA msg = "reg-before"
-8/8/2026 10:06:32 PM - PASS -           relayB element received
-8/8/2026 10:06:32 PM - PASS -           relayB msg = "reg-before"
-8/8/2026 10:06:32 PM - PASS -           relayC element received
-8/8/2026 10:06:32 PM - PASS -           relayC msg = "reg-before"
-8/8/2026 10:06:32 PM - PASS -           relayA element received
-8/8/2026 10:06:32 PM - PASS -           relayA msg = "reg-after"
-8/8/2026 10:06:32 PM - PASS -           relayC element received
-8/8/2026 10:06:32 PM - PASS -           relayC msg = "reg-after"
-8/8/2026 10:06:32 PM - PASS -           Appender 'relayB' Silent
-8/8/2026 10:06:32 PM - PASS -           No assert on unknown-id unregister
-8/8/2026 10:06:32 PM - PASS -           relayA msg = "reg-ghost"
-8/8/2026 10:06:32 PM - PASS -           relayC msg = "reg-ghost"
+8/11/2026 11:33:50 PM - PASS - Tests.lvlib:Test.vi - 
+8/11/2026 11:33:50 PM - PASS - Tests.lvlib:All Unit Tests - Tests.lvlib:Delivery - single appender.vi
+8/11/2026 11:33:50 PM - PASS -         Tests.lvlib:Delivery - single appender.vi - Tests.lvlib:Delivery - single appender.vi
+8/11/2026 11:33:50 PM - PASS -           Statement delivered within timeout
+8/11/2026 11:33:50 PM - PASS -           Delivered message matches
+8/11/2026 11:33:50 PM - PASS -         Tests.lvlib:Severity - rank compare.vi - Tests.lvlib:Severity - rank compare.vi
+8/11/2026 11:33:50 PM - PASS -           ALL threshold passes every level (TRACE)
+8/11/2026 11:33:50 PM - PASS -           Rank <= threshold passes (ERROR vs WARN)
+8/11/2026 11:33:50 PM - PASS -           Below threshold dropped (DEBUG vs INFO)
+8/11/2026 11:33:50 PM - PASS -           Equal-rank boundary passes (INFO vs INFO)
+8/11/2026 11:33:50 PM - PASS -           OFF threshold disables all (FATAL)
+8/11/2026 11:33:50 PM - PASS -         Tests.lvlib:Layout - CSV quoting.vi - Tests.lvlib:Layout - CSV quoting.vi
+8/11/2026 11:33:50 PM - PASS -           Configured delimiter forces quoting
+8/11/2026 11:33:50 PM - PASS -           Plain field is not quoted
+8/11/2026 11:33:50 PM - PASS -           Embedded quote doubled and wrapped
+8/11/2026 11:33:50 PM - PASS -           Delimiter in field forces quoting
+8/11/2026 11:33:50 PM - PASS -           Newline forces quoting
+8/11/2026 11:33:50 PM - PASS -           Comma not quoted when delimiter is Tab
+8/11/2026 11:33:50 PM - PASS -         Tests.lvlib:Filter - tag prefix.vi - Tests.lvlib:Filter - tag prefix.vi
+8/11/2026 11:33:50 PM - PASS -           Tag shorter than prefix does not match
+8/11/2026 11:33:50 PM - PASS -           Exact tag matches
+8/11/2026 11:33:50 PM - PASS -           Sibling tag does not match (no dot boundary)
+8/11/2026 11:33:50 PM - PASS -           Empty prefix matches any
+8/11/2026 11:33:50 PM - PASS -           Child tag matches on dot boundary
+8/11/2026 11:33:50 PM - PASS -         Tests.lvlib:Filter - level range.vi - Tests.lvlib:Filter - level range.vi
+8/11/2026 11:33:50 PM - PASS -           In-band level with non-matching tag rejected (AND)
+8/11/2026 11:33:50 PM - PASS -           Single-level band accepts that level
+8/11/2026 11:33:50 PM - PASS -           Level less severe than band is rejected
+8/11/2026 11:33:50 PM - PASS -           Level within band is accepted
+8/11/2026 11:33:50 PM - PASS -           Single-level band rejects a more-severe level
+8/11/2026 11:33:50 PM - PASS -           Level more severe than band is rejected
+8/11/2026 11:33:50 PM - PASS -         Tests.lvlib:Severity - name round trip.vi - Tests.lvlib:Severity - name round trip.vi
+8/11/2026 11:33:50 PM - PASS -           Enum to name: FATAL
+8/11/2026 11:33:50 PM - PASS -           Unknown name faults
+8/11/2026 11:33:50 PM - PASS -           Enum to name: INFO
+8/11/2026 11:33:50 PM - PASS -           Enum to name: ALL (sentinel)
+8/11/2026 11:33:50 PM - PASS -           Name to enum: TRACE
+8/11/2026 11:33:50 PM - PASS -           Name to enum: OFF (sentinel)
+8/11/2026 11:33:50 PM - PASS -           Name to enum: FATAL
+8/11/2026 11:33:50 PM - PASS -         Tests.lvlib:Layout - ISO 8601 timestamp.vi - Tests.lvlib:Layout - ISO 8601 timestamp.vi
+8/11/2026 11:33:50 PM - PASS -           Local instant renders its wall-clock
+8/11/2026 11:33:50 PM - PASS -           UTC instant formats with Z
+8/11/2026 11:33:50 PM - PASS -           Millisecond fraction rendered (.125)
+8/11/2026 11:33:50 PM - PASS -         Tests.lvlib:Layout - JSON escape string.vi - Tests.lvlib:Layout - JSON escape string.vi
+8/11/2026 11:33:50 PM - PASS -           Other control char becomes \u00xx
+8/11/2026 11:33:50 PM - PASS -           Newline becomes backslash-n
+8/11/2026 11:33:50 PM - PASS -           Backslash escaped before quote (ordering)
+8/11/2026 11:33:50 PM - PASS -           Plain string is just quoted
+8/11/2026 11:33:50 PM - PASS -           Double quote is escaped
+8/11/2026 11:33:50 PM - PASS -           Backslash is doubled
+8/11/2026 11:33:50 PM - PASS -           Empty string yields a pair of quotes
+8/11/2026 11:33:50 PM - PASS -         Tests.lvlib:Layout - JSON Format.vi - Tests.lvlib:Layout - JSON Format.vi
+8/11/2026 11:33:50 PM - PASS -           Full statement emits all keys in order
+8/11/2026 11:33:50 PM - PASS -           Empty attributes are omitted
+8/11/2026 11:33:50 PM - PASS -           Message is JSON-escaped
+8/11/2026 11:33:50 PM - PASS -           Empty msg is still present
+8/11/2026 11:33:50 PM - PASS -         Tests.lvlib:Delivery - broadcast.vi - Tests.lvlib:Delivery - broadcast.vi
+8/11/2026 11:33:50 PM - PASS -           relayA element received
+8/11/2026 11:33:50 PM - PASS -           relayA msg = "broadcast-probe"
+8/11/2026 11:33:50 PM - PASS -           relayA level = "INFO"
+8/11/2026 11:33:50 PM - PASS -           relayA sourceTag = "BCAST"
+8/11/2026 11:33:50 PM - PASS -           Appender 'relayA' single delivery
+8/11/2026 11:33:50 PM - PASS -           relayB element received
+8/11/2026 11:33:50 PM - PASS -           relayB msg = "broadcast-probe"
+8/11/2026 11:33:50 PM - PASS -           relayB level = "INFO"
+8/11/2026 11:33:50 PM - PASS -           relayB sourceTag = "BCAST"
+8/11/2026 11:33:50 PM - PASS -           Appender 'relayB' single delivery
+8/11/2026 11:33:50 PM - PASS -           relayC element received
+8/11/2026 11:33:50 PM - PASS -           relayC msg = "broadcast-probe"
+8/11/2026 11:33:50 PM - PASS -           relayC level = "INFO"
+8/11/2026 11:33:50 PM - PASS -           relayC sourceTag = "BCAST"
+8/11/2026 11:33:50 PM - PASS -           Appender 'relayC' single delivery
+8/11/2026 11:33:50 PM - PASS -         Tests.lvlib:Registry - unregister silences appender.vi - Tests.lvlib:Registry - unregister silences appender.vi
+8/11/2026 11:33:50 PM - PASS -           relayA element received
+8/11/2026 11:33:50 PM - PASS -           relayA msg = "reg-before"
+8/11/2026 11:33:50 PM - PASS -           relayB element received
+8/11/2026 11:33:50 PM - PASS -           relayB msg = "reg-before"
+8/11/2026 11:33:50 PM - PASS -           relayC element received
+8/11/2026 11:33:50 PM - PASS -           relayC msg = "reg-before"
+8/11/2026 11:33:50 PM - PASS -           relayA element received
+8/11/2026 11:33:50 PM - PASS -           relayA msg = "reg-after"
+8/11/2026 11:33:50 PM - PASS -           relayC element received
+8/11/2026 11:33:50 PM - PASS -           relayC msg = "reg-after"
+8/11/2026 11:33:50 PM - PASS -           Appender 'relayB' Silent
+8/11/2026 11:33:50 PM - PASS -           No assert on unknown-id unregister
+8/11/2026 11:33:50 PM - PASS -           relayA msg = "reg-ghost"
+8/11/2026 11:33:50 PM - PASS -           relayC msg = "reg-ghost"
+8/11/2026 11:33:50 PM - PASS -         Tests.lvlib:Relay - Message Mode.vi - Tests.lvlib:Relay - Message Mode.vi
+8/11/2026 11:33:50 PM - PASS -           msgmode-probe reached the consumer
+8/11/2026 11:33:50 PM - PASS -           Assert Equal Value_Variant
+8/11/2026 11:33:50 PM - PASS -           level = INFO
+8/11/2026 11:33:50 PM - PASS -           sourceTag = "MSG"
+8/11/2026 11:33:50 PM - PASS -           Dequeuer Timed Out
+8/11/2026 11:33:50 PM - PASS -         Tests.lvlib:Relay - filtered tap.vi - Tests.lvlib:Relay - filtered tap.vi
+8/11/2026 11:33:50 PM - PASS -           Statement delivered within timeout
+8/11/2026 11:33:50 PM - PASS -           INFO Dropped, WARN delivered
+8/11/2026 11:33:50 PM - PASS -           ERROR delivered
+8/11/2026 11:33:50 PM - PASS -           Queue empty

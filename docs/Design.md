@@ -61,9 +61,9 @@ Lumberjack separates a low-frequency **control plane** from a high-frequency
 - **Data plane (caller-side fan-out via a shared reference):** the log-write hot
   path. A caller holds a lightweight `Logger` facade backed by a Notifier. The
   Notifier carries a read-only snapshot: the global threshold and the current
-  set of appenders. Each snapshot entry is a `{id, enqueuer}` pair (`SnapshotEntry`),
-  so an appender's identity travels with its enqueuer rather than in a parallel
-  array. A log call reads the current snapshot, applies
+  set of appenders in an `appenders` array. Each entry is a `RegistryEntry`
+  (`{id, enqueuer}`), the same type the manager keys its registry on, so an
+  appender's identity travels with its enqueuer rather than in a parallel array. A log call reads the current snapshot, applies
   the coarse global threshold locally (SRS-LMBR-012), and enqueues the statement
   directly to each appender's enqueuer. The root is not in this path.
 
