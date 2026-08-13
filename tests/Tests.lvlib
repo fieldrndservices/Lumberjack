@@ -21,21 +21,28 @@
 		<Property Name="NI.LibItem.Scope" Type="Int">2</Property>
 		<Item Name="Close test manager.vi" Type="VI" URL="../Support/Close test manager.vi"/>
 		<Item Name="Launch Consumer Relay.vi" Type="VI" URL="../Support/Launch Consumer Relay.vi"/>
+		<Item Name="List Log Files.vi" Type="VI" URL="../Support/List Log Files.vi"/>
 		<Item Name="Open test manager.vi" Type="VI" URL="../Support/Open test manager.vi"/>
+		<Item Name="Read Log Lines.vi" Type="VI" URL="../Support/Read Log Lines.vi"/>
+		<Item Name="Register File Appender.vi" Type="VI" URL="../Support/Register File Appender.vi"/>
 		<Item Name="Register Relay Appender.vi" Type="VI" URL="../Support/Register Relay Appender.vi"/>
 		<Item Name="Release Relay Queues.vi" Type="VI" URL="../Support/Release Relay Queues.vi"/>
 		<Item Name="Setup - create temp root.vi" Type="VI" URL="../Support/Setup - create temp root.vi"/>
 		<Item Name="Tear Down - delete root temp.vi" Type="VI" URL="../Support/Tear Down - delete root temp.vi"/>
+		<Item Name="Unit Test Template.vi" Type="VI" URL="../Unit/Unit Test Template.vi"/>
 	</Item>
 	<Item Name="Unit" Type="Folder">
 		<Item Name="Filter - level range.vi" Type="VI" URL="../Unit/Filter - level range.vi"/>
 		<Item Name="Filter - tag prefix.vi" Type="VI" URL="../Unit/Filter - tag prefix.vi"/>
+		<Item Name="ISO 8601 filename.vi" Type="VI" URL="../Unit/ISO 8601 filename.vi"/>
 		<Item Name="Layout - CSV quoting.vi" Type="VI" URL="../Unit/Layout - CSV quoting.vi"/>
 		<Item Name="Layout - ISO 8601 timestamp.vi" Type="VI" URL="../Unit/Layout - ISO 8601 timestamp.vi"/>
 		<Item Name="Layout - JSON escape string.vi" Type="VI" URL="../Unit/Layout - JSON escape string.vi"/>
 		<Item Name="Layout - JSON Format.vi" Type="VI" URL="../Unit/Layout - JSON Format.vi"/>
+		<Item Name="Retention prune.vi" Type="VI" URL="../Unit/Retention prune.vi"/>
 		<Item Name="Severity - name round trip.vi" Type="VI" URL="../Unit/Severity - name round trip.vi"/>
 		<Item Name="Severity - rank compare.vi" Type="VI" URL="../Unit/Severity - rank compare.vi"/>
+		<Item Name="Source tag - defaulting.vi" Type="VI" URL="../Unit/Source tag - defaulting.vi"/>
 	</Item>
 	<Item Name="All Unit Tests.vi" Type="VI" URL="../All Unit Tests.vi"/>
 	<Item Name="Test.vi" Type="VI" URL="../Test.vi"/>

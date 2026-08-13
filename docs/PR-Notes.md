@@ -19,7 +19,7 @@ subject to SOP-117 human review before being treated as authoritative.
 
 ### New files
 
-Caraya test framework (8 unit tests, 43 assertions, all passing via `Test.vi`):
+Caraya test framework (11 unit tests, 61 assertions, all passing via `Test.vi`):
 
 - `tests/Tests.lvlib` (friend of `Lumberjack.lvlib`)
 - `tests/Test.vi` (suite runner)
@@ -32,6 +32,9 @@ Caraya test framework (8 unit tests, 43 assertions, all passing via `Test.vi`):
 - `tests/Unit/Layout - JSON escape string.vi` (7)
 - `tests/Unit/Layout - ISO 8601 timestamp.vi` (3)
 - `tests/Unit/Layout - JSON format.vi` (4)
+- `tests/Unit/Source tag - defaulting.vi` (5)
+- `tests/Unit/Retention prune.vi` (6)
+- `tests/Unit/ISO 8601 filename.vi` (7)
 
 New library VIs:
 
@@ -125,12 +128,39 @@ Documentation:
   gate correctly. Caught by the `Relay - filtered tap` integration test (the
   `RoutedFilterMatch` unit tests passed because the predicate itself was correct;
   only the shipped caller was mis-wired).
+- **`PruneSelection` per-base-name retention off-by-one fixed:** the running
+  counter that reset on each base-name change was misaligned at the group
+  boundary, so when one base-name series in a folder sat at or under its
+  `maxFileCount`, it suppressed pruning of the *other* series sharing that folder,
+  the over-limit series never shed its oldest file. Field effect: two series in
+  one root with the later-sorted one under its limit meant retention silently did
+  nothing and that folder grew unbounded (SRS-LMBR-034). Caught by the new
+  `Retention prune` unit test at `LMBR-T-041-a` (app=4 + db=2, max 3 → expected
+  the oldest `app` file, got an empty selection); the single-series and
+  both-over-limit cases had masked it. Fixed by making each group's over-limit
+  decision local and letting `FilesToDelete` accumulate unconditionally.
+- **`PruneSelection` UTC-from-dashes heuristic removed (retention parse fix):**
+  the reorganization step inferred whether a file name's timestamp was UTC or
+  local from a dash pattern in the name, and that heuristic mis-read the `timekey`
+  when the name's dash layout differed, so grouping and age-ordering collapsed and
+  every over-limit group returned an empty selection, retention silently did
+  nothing (SRS-LMBR-034). Surfaced once the `Retention prune` fixtures were built
+  to match the real `ISO8601FileName` output: `LMBR-T-040-a`, `-040-d`, and
+  `-041-a` went red with empty results while the empty-expecting cases stayed
+  green. Fixed in `PruneSelection` so `timekey` extraction no longer depends on the
+  dash pattern; the timezone frame is an appender property (`useUTC`), not
+  something to reverse-engineer from the rendered name, so the timekey is treated
+  as an opaque sortable token.
 - **`enableDefaultFile` validation gating** (5024 fix): `ValidateLumberjackConfigDTO`
   now gates the default-file validator chain on `enableDefaultFile`, so a disabled
   default file is neither resolved nor validated. Corrects the earlier silent
   manager death on an empty-id default config.
 - **`Appender.GetID` promoted to public** (read-only id accessor; dissolves a
   friend-scope issue for `Logger`/tests rather than adding friend edges).
+- **`Test.vi` default-file cleanup:** `Test.vi` (suite runner) now deletes the
+  default log file before the run when its **path input is empty**; a non-empty
+  path input suppresses the delete. This clears a stale default file so the suite
+  starts clean and runs are repeatable, and a missing file is a no-op.
 
 ---
 

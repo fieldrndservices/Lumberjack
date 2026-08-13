@@ -35,6 +35,9 @@ reference.
 - **Notes** — invariants, gotchas, ordering constraints, edge cases, and any
   SOP-117 review flag.
 
+Test VIs (anything under `tests/` that runs Caraya asserts) follow the same
+template and additionally obey the assert-naming standard in section 4.
+
 ---
 
 ## 2. Terminal Description and Tips
@@ -84,8 +87,49 @@ Conventions:
 
 ---
 
-## 4. Companion documents
+## 4. Test VI assert-naming standard
+
+Applies to every VI under `tests/` that runs Caraya asserts. Its purpose is to
+make each assert traceable from the run report back to a requirement, so a
+`LumberjackTestResults.txt` line and the SRS resolve to each other.
+
+- **Every assert name begins with a hierarchical Test ID:** the case-level ID
+  (`LMBR-T-###`), a suffix letter, then the human-readable assertion, e.g.
+  `LMBR-T-014-c Level within band is accepted`. Caraya writes the name into
+  `tests/Test Results/LumberjackTestResults.txt` and the HTML report, so the
+  Test ID is the join key from a report line to the `Test-Strategy.md` §4 matrix.
+- **The case ID is the unit of trace.** The portion before the suffix maps to one
+  SRS item (or set) in the §4 matrix; the suffix letter distinguishes the
+  individual asserts within that case.
+- **Suffixes are per case and run continuously, even across VIs.** A case
+  implemented by two VIs keeps one letter sequence (e.g. T-005 is `-a..-d` in
+  `Layout - JSON Format.vi` and `-e..-k` in `Layout - JSON escape string.vi`), so
+  no two asserts ever share an ID. One VI may also carry asserts from more than
+  one case (e.g. `Layout - CSV quoting.vi` holds T-002 and T-003 asserts).
+- **Looped asserts compute the suffix; never hand-type it.** Derive the trailing
+  letter from the iteration index: index into a 26-char constant `abc...z` with
+  `String Subset`, or `97 + index -> U8 -> Byte Array To String`. For a nested
+  loop the index is `outer * innerCount + inner`; for a flat loop, a running
+  shift-register counter incremented once per assert.
+- **Adding an assert:** append the next unused suffix under its case. **IDs are
+  assigned once and never reused**, even if an assert is later deleted, so an
+  archived report still resolves against a future revision of the matrix.
+- **A new behavior with no case ID** first gets the next free `LMBR-T-###` row in
+  the §4 matrix, traced to its SRS item, before its asserts are named.
+- **Every assert gets a meaningful name.** Replace Caraya default names (e.g.
+  `Assert Equal Value_Variant`) with a phrase stating what is checked.
+- **The VI Documentation field lists the case IDs the VI implements** and the SRS
+  they trace to (e.g. "Implements LMBR-T-002, T-003 -> SRS-012"), and points to
+  `Test-ID-Assert-Checklist.md`, which holds the full per-assert suffix map.
+
+---
+
+## 5. Companion documents
 
 - `Error-Codes.md` — error code registry and message conventions.
 - `Doc-Terminal-Audit.md` — audit of which terminals carry descriptions.
+- `Test-Strategy.md` — test tiers and the requirement-traced inventory (§4
+  matrix) that owns the case-level Test IDs.
+- `Test-ID-Assert-Checklist.md` — per-assert hierarchical ID map for the built
+  test VIs.
 - `Design.md`, `Class-Reference.md`, `API-Guide.md` — architecture and API.

@@ -114,6 +114,10 @@ so adopters still cannot. The stateful/constrained helpers, Store
 - **Manager fixture:** launch a LogManager with the default file disabled and
   exactly the appenders a test needs, then shut it down in TearDown, asserting a
   clean flush.
+- **Default-file cleanup:** `Test.vi` deletes the default log file at suite start
+  when its path input is empty (a non-empty path suppresses it), so a stale
+  default file from a prior run can't pollute the suite. Complements the temp-root
+  fixture (per-test file isolation) and the manager fixture (clean flush).
 
 ### 3.5 Determinism rule
 
@@ -144,116 +148,138 @@ Therefore:
 
 ## 4. Test inventory
 
-Tier is U (unit) or I (integration). Each case lists the assertion intent and
-the requirements it covers.
+Tier is U (unit) or I (integration). Each case carries a stable case-level
+**Test ID** (`LMBR-T-###`), the assertion intent, the requirements it covers,
+and the VI(s) that implement it (`planned` where no VI is built yet).
+
+The case-level Test ID is the unit of trace to the SRS. Within a VI, each
+individual Caraya assert carries that case ID plus a suffix letter
+(`LMBR-T-014-a`, `-b`, ...), so every assert is uniquely identified in the report
+while still rolling up to one requirement. A case may be implemented across more
+than one VI; its assert suffixes run continuously so no two asserts share an ID
+(for example T-005 spans both JSON VIs, `-a..-d` in `Layout - JSON Format.vi`
+and `-e..-k` in `Layout - JSON escape string.vi`). A single VI likewise holds
+asserts from more than one case (for example `Layout - CSV quoting.vi` carries
+T-002 quoting asserts and T-003 delimiter asserts). A requirement with no Test
+ID is a coverage gap; a `planned` row is a case with no implementing VI yet. The
+per-assert suffix map is maintained in `Test-ID-Assert-Checklist.md`.
+
+**Assert-naming convention.** Each Caraya assert's name begins with its
+hierarchical Test ID, e.g. `LMBR-T-014-c Level within band is accepted`. Caraya
+writes each assert name into `tests/Test Results/LumberjackTestResults.txt` and
+the HTML report, so the Test ID is the join key between a report line and this
+matrix: every executed assert reports its own pass/fail under its own ID even
+when several share one VI. IDs are assigned once and never reused, so a report
+archived today still resolves against a future revision of this table.
 
 ### 4.1 Statement and layout
 
-| Case | Assertion | Tier | SRS |
-|---|---|---|---|
-| CSV column order | fields emit as timestamp, level, sourceTag, originVI, message | U | 010, 012 |
-| CSV quote escaping | a message with quotes/delimiter/newline is RFC 4180 quoted | U | 012 |
-| CSV custom delimiter | tab delimiter applied (Logger parity) | U | 012 |
-| ISO 8601 timestamp | timestamp field matches ISO 8601 | U | 011 |
-| JSON layout | one valid JSON object per statement | U | 015 |
-| Statement fields | origin VI and source tag are distinct and both present | U | 010, 013 |
+| Test ID | Case | Assertion | Tier | SRS | Implementing VI |
+|---|---|---|---|---|---|
+| LMBR-T-001 | CSV column order | fields emit as timestamp, level, sourceTag, originVI, message | U | 010, 012 | planned |
+| LMBR-T-002 | CSV quote escaping | a message with quotes/delimiter/newline is RFC 4180 quoted | U | 012 | tests/Unit/Layout - CSV quoting.vi |
+| LMBR-T-003 | CSV custom delimiter | tab delimiter applied; comma not quoted under tab (Logger parity) | U | 012 | tests/Unit/Layout - CSV quoting.vi |
+| LMBR-T-004 | ISO 8601 timestamp | timestamp field matches ISO 8601 | U | 011 | tests/Unit/Layout - ISO 8601 timestamp.vi |
+| LMBR-T-005 | JSON layout | one valid JSON object per statement, strings correctly escaped | U | 015 | tests/Unit/Layout - JSON Format.vi; tests/Unit/Layout - JSON escape string.vi |
+| LMBR-T-006 | Statement fields | origin VI and source tag are distinct and both present | U | 010, 013 | planned |
 
 ### 4.2 Severity and filtering
 
-| Case | Assertion | Tier | SRS |
-|---|---|---|---|
-| Rank compare | rank <= threshold passes, else dropped | U | 005, 006 |
-| Threshold 0 | disables all logging | U | 006 |
-| Threshold 7+ | passes all levels | U | 006 |
-| Global coarse gate | statement above global threshold is not fanned out | U/I | 007, 012 |
-| Per-appender threshold | appender writes only statements passing its own threshold | I | 009 |
-| Mirror mode | accepts everything above threshold | U | 026 |
-| Routed level range | accepts only within the inclusive rank band [levelMin, levelMax] (log4j LevelRangeFilter semantics: levelMin most severe, levelMax least severe) | U | 026 |
-| Routed single level | levelMin == levelMax accepts exactly that one level | U | 026 |
-| Tag prefix match | `app.db` matches `app.db` and `app.db.query`, not `app.database` (dot-boundary, via `RoutedFilterMatch`) | U | 027 |
+| Test ID | Case | Assertion | Tier | SRS | Implementing VI |
+|---|---|---|---|---|---|
+| LMBR-T-007 | Rank compare | rank <= threshold passes, else dropped | U | 005, 006 | tests/Unit/Severity - rank compare.vi |
+| LMBR-T-008 | Severity name round trip | severity name <-> rank round-trips for FATAL..TRACE | U | 005, 050a | tests/Unit/Severity - name round trip.vi |
+| LMBR-T-009 | Threshold 0 | disables all logging | U | 006 | tests/Unit/Severity - rank compare.vi |
+| LMBR-T-010 | Threshold 7+ | passes all levels | U | 006 | tests/Unit/Severity - rank compare.vi |
+| LMBR-T-011 | Global coarse gate | statement above global threshold is not fanned out | U/I | 007, 012 | planned |
+| LMBR-T-012 | Per-appender threshold | appender writes only statements passing its own threshold | I | 009 | planned |
+| LMBR-T-013 | Mirror mode | accepts everything above threshold | U | 026 | planned |
+| LMBR-T-014 | Routed level range | accepts only within the inclusive rank band [levelMin, levelMax] (log4j LevelRangeFilter semantics: levelMin most severe, levelMax least severe) | U | 026 | tests/Unit/Filter - level range.vi |
+| LMBR-T-015 | Routed single level | levelMin == levelMax accepts exactly that one level | U | 026 | tests/Unit/Filter - level range.vi |
+| LMBR-T-016 | Tag prefix match | `app.db` matches `app.db` and `app.db.query`, not `app.database` (dot-boundary, via `RoutedFilterMatch`) | U | 027 | tests/Unit/Filter - tag prefix.vi |
 
 ### 4.3 Source tag
 
-| Case | Assertion | Tier | SRS |
-|---|---|---|---|
-| Default tag | unset tag defaults to origin VI base name | U | 013, 017 |
-| Dot sanitization | dots in a VI-derived default become single-node (no false hierarchy) | U | 013 |
-| Explicit tag | supplied tag is used verbatim | U | 013 |
+| Test ID | Case | Assertion | Tier | SRS | Implementing VI |
+|---|---|---|---|---|---|
+| LMBR-T-017 | Default tag | unset tag defaults to origin VI base name | U | 013, 017 | tests/Unit/Source tag - defaulting.vi |
+| LMBR-T-018 | Dot sanitization | dots in a VI-derived default become single-node (no false hierarchy) | U | 013 | tests/Unit/Source tag - defaulting.vi |
+| LMBR-T-019 | Explicit tag | supplied tag is used verbatim | I | 013 | planned |
 
 ### 4.4 Configuration
 
-| Case | Assertion | Tier | SRS |
-|---|---|---|---|
-| Input baseline | launch inputs produce the effective config with no file | U | 044 |
-| JSON per-key merge | file overrides only the keys it sets; absent keys fall back | U | 046 |
-| Missing file | defined path, missing file, returns non-fatal warning, continues | U | 047 |
-| Invalid file | present but unparseable/invalid fails launch with a descriptive error | U | 048 |
-| Field validation | out-of-range threshold, bad enum, negative size each named in the error | U | 048 |
-| Enum name membership | unknown Severity/DropPolicy/FilterMode name is rejected with the accepted set listed | U | 048 |
-| Bounded values | maxFileSize/maxFileCount/queueBound accept -1 (unbounded) and positive; reject 0 and < -1 | U | 033, 034, 056 |
-| Schema version | schemaVersion accepted by set membership; a non-member is rejected | U | 048 |
-| Resolve once | effective config computed once at launch | U/I | 051 |
+| Test ID | Case | Assertion | Tier | SRS | Implementing VI |
+|---|---|---|---|---|---|
+| LMBR-T-020 | Input baseline | launch inputs produce the effective config with no file | U | 044 | planned |
+| LMBR-T-021 | JSON per-key merge | file overrides only the keys it sets; absent keys fall back | U | 046 | planned |
+| LMBR-T-022 | Missing file | defined path, missing file, returns non-fatal warning, continues | U | 047 | planned |
+| LMBR-T-023 | Invalid file | present but unparseable/invalid fails launch with a descriptive error | U | 048 | planned |
+| LMBR-T-024 | Field validation | out-of-range threshold, bad enum, negative size each named in the error | U | 048 | planned |
+| LMBR-T-025 | Enum name membership | unknown Severity/DropPolicy/FilterMode name is rejected with the accepted set listed | U | 048 | tests/Unit/Severity - name round trip.vi |
+| LMBR-T-026 | Bounded values | maxFileSize/maxFileCount/queueBound accept -1 (unbounded) and positive; reject 0 and < -1 | U | 033, 034, 056 | planned |
+| LMBR-T-027 | Schema version | schemaVersion accepted by set membership; a non-member is rejected | U | 048 | planned |
+| LMBR-T-028 | Resolve once | effective config computed once at launch | U/I | 051 | planned |
 
 ### 4.5 Appenders and broadcast
 
-| Case | Assertion | Tier | SRS |
-|---|---|---|---|
-| Single appender delivery | a statement reaches the one registered appender | I | 019 |
-| Multi-appender broadcast | a statement reaches all registered appenders | I | 019, 028 |
-| Register at runtime | a newly registered appender begins receiving | I | 020, 028 |
-| Unregister at runtime | an unregistered appender stops receiving and flushes | I | 020 |
-| Fault isolation | a stopped/faulted appender does not block delivery to others | I | 021 |
-| Two files, distinct roots | mirror file and errors-only file receive the correct subsets | I | 032, 039, 040 |
+| Test ID | Case | Assertion | Tier | SRS | Implementing VI |
+|---|---|---|---|---|---|
+| LMBR-T-029 | Single appender delivery | a statement reaches the one registered appender | I | 019 | tests/Integration/Delivery - single appender.vi |
+| LMBR-T-030 | Multi-appender broadcast | a statement reaches all registered appenders | I | 019, 028 | tests/Integration/Delivery - broadcast.vi |
+| LMBR-T-031 | Register at runtime | a newly registered appender begins receiving | I | 020, 028 | planned |
+| LMBR-T-032 | Unregister at runtime | an unregistered appender stops receiving and flushes | I | 020 | tests/Integration/Registry - unregister silences appender.vi |
+| LMBR-T-033 | Fault isolation | a stopped/faulted appender does not block delivery to others | I | 021 | planned |
+| LMBR-T-034 | Two files, distinct roots | mirror file and errors-only file receive the correct subsets | I | 032, 039, 040 | planned |
 
 ### 4.6 File mechanics
 
-| Case | Assertion | Tier | SRS |
-|---|---|---|---|
-| ISO filename | each file name embeds an ISO 8601 timestamp (colons removed) | U/I | 035 |
-| Base name prefix | non-empty baseName yields `baseName_<timestamp>.<ext>`; empty yields timestamp-only | U | 035 |
-| Extension normalize | "csv" and ".csv" both yield one dot; empty extension yields no trailing dot | U | 035 |
-| UTC frame agreement | within one appender, useUTC frames its file name, calendar folder, and layout line timestamp identically; appenders may differ (e.g. local console + UTC file) | U | 011, 035, 036 |
-| Rollover on size | exceeding max size opens a new file | I | 033 |
-| Retention prune | files beyond max count are pruned oldest-first; -1 keeps all | U/I | 034 |
-| Per-series prune | files with different base names in one folder are pruned independently, not against each other | U | 034 |
-| Calendar tree | files placed in dated sub-folders when enabled | I | 036 |
+| Test ID | Case | Assertion | Tier | SRS | Implementing VI |
+|---|---|---|---|---|---|
+| LMBR-T-035 | ISO filename | each file name embeds an ISO 8601 timestamp (colons removed) | U/I | 035 | tests/Unit/ISO 8601 filename.vi |
+| LMBR-T-036 | Base name prefix | non-empty baseName yields `baseName_<timestamp>.<ext>`; empty yields timestamp-only | U | 035 | tests/Unit/ISO 8601 filename.vi |
+| LMBR-T-037 | Extension normalize | "csv" and ".csv" both yield one dot; empty extension yields no trailing dot | U | 035 | tests/Unit/ISO 8601 filename.vi |
+| LMBR-T-038 | UTC frame agreement | within one appender, useUTC frames its file name, calendar folder, and layout line timestamp identically; appenders may differ (e.g. local console + UTC file) | U | 011, 035, 036 | planned |
+| LMBR-T-039 | Rollover on size | exceeding max size opens a new file | I | 033 | planned |
+| LMBR-T-040 | Retention prune | files beyond max count are pruned oldest-first; -1 keeps all | U/I | 034 | tests/Unit/Retention prune.vi |
+| LMBR-T-041 | Per-series prune | files with different base names in one folder are pruned independently, not against each other | U | 034 | tests/Unit/Retention prune.vi |
+| LMBR-T-042 | Calendar tree | files placed in dated sub-folders when enabled | I | 036 | planned |
 
 ### 4.7 Relay appender
 
-| Case | Assertion | Tier | SRS |
-|---|---|---|---|
-| Message mode | accepted statements arrive at the consumer enqueuer | I | 024 |
-| Queue mode | accepted statements are dequeueable from the exposed queue | I | 025 |
-| Filtered tap | a routed/threshold relay receives only its subset | I | 023, 026 |
+| Test ID | Case | Assertion | Tier | SRS | Implementing VI |
+|---|---|---|---|---|---|
+| LMBR-T-043 | Message mode | accepted statements arrive at the consumer enqueuer | I | 024 | tests/Integration/Relay - Message Mode.vi |
+| LMBR-T-044 | Queue mode | accepted statements are dequeueable from the exposed queue | I | 025 | planned |
+| LMBR-T-045 | Filtered tap | a routed/threshold relay receives only its subset | I | 023, 026 | tests/Integration/Relay - filtered tap.vi |
 
 ### 4.8 Backpressure
 
-| Case | Assertion | Tier | SRS |
-|---|---|---|---|
-| Unbounded default | no loss with an unbounded queue | U/I | 055 |
-| Drop-oldest | on a full bound, oldest is discarded, newest admitted | U | 057 |
-| Drop-newest | on a full bound, newest is discarded | U | 057 |
-| Level-aware | ERROR/FATAL never discarded; lower severities shed first | U | 057 |
-| No blocking | enqueue path returns without blocking when full | U | 058 |
-| Drop notice | discards produce a synthetic "N statements dropped" record | U/I | 059 |
+| Test ID | Case | Assertion | Tier | SRS | Implementing VI |
+|---|---|---|---|---|---|
+| LMBR-T-046 | Unbounded default | no loss with an unbounded queue | U/I | 055 | planned |
+| LMBR-T-047 | Drop-oldest | on a full bound, oldest is discarded, newest admitted | U | 057 | planned |
+| LMBR-T-048 | Drop-newest | on a full bound, newest is discarded | U | 057 | planned |
+| LMBR-T-049 | Level-aware | ERROR/FATAL never discarded; lower severities shed first | U | 057 | planned |
+| LMBR-T-050 | No blocking | enqueue path returns without blocking when full | U | 058 | planned |
+| LMBR-T-051 | Drop notice | discards produce a synthetic "N statements dropped" record | U/I | 059 | planned |
 
 ### 4.9 Lifecycle and error handling
 
-| Case | Assertion | Tier | SRS |
-|---|---|---|---|
-| Shutdown flush | queued statements are written before stop completes | I | 002 |
-| Shutdown on error | shutdown flush/close runs even with an incoming error | I | 004 |
-| CatchError log | a caught error is logged at a derived severity | I | 041 |
-| Verbosity gate | dialog shown only at/above configured verbosity | U | 042 |
+| Test ID | Case | Assertion | Tier | SRS | Implementing VI |
+|---|---|---|---|---|---|
+| LMBR-T-052 | Shutdown flush | queued statements are written before stop completes | I | 002 | planned |
+| LMBR-T-053 | Shutdown on error | shutdown flush/close runs even with an incoming error | I | 004 | planned |
+| LMBR-T-054 | CatchError log | a caught error is logged at a derived severity | I | 041 | planned |
+| LMBR-T-055 | Verbosity gate | dialog shown only at/above configured verbosity | U | 042 | planned |
 
 ### 4.10 PPL path safety
 
-| Case | Assertion | Tier | SRS |
-|---|---|---|---|
-| Explicit root honored | a supplied root folder is used verbatim | U | 039, 064 |
-| Host-context default | empty root resolves against host app context, not the library path | U | 064 |
-| Built-app requires path | with no host path and Application.Kind = Run Time System, resolution faults with error 5000 | U | 064 |
-| No self-derived paths | no library VI derives an external path from its own VI path | U (inspection) | 064 |
+| Test ID | Case | Assertion | Tier | SRS | Implementing VI |
+|---|---|---|---|---|---|
+| LMBR-T-056 | Explicit root honored | a supplied root folder is used verbatim | U | 039, 064 | planned |
+| LMBR-T-057 | Host-context default | empty root resolves against host app context, not the library path | U | 064 | planned |
+| LMBR-T-058 | Built-app requires path | with no host path and Application.Kind = Run Time System, resolution faults with error 5000 | U | 064 | planned |
+| LMBR-T-059 | No self-derived paths | no library VI derives an external path from its own VI path | U (inspection) | 064 | planned |
 
 ---
 

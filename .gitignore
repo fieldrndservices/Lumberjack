@@ -24,3 +24,5 @@ docs/*.docx
 docs/*.pdf
 docs/HTMLReport/*.html
 docs/HTMLReport/images/*.jpg
+tests/Test Results/*
+!tests/Test Results/.gitkeep
