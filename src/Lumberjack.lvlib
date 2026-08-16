@@ -101,7 +101,7 @@
 			<Item Name="JSONEscapeString.vi" Type="VI" URL="../Support/JSON/JSONEscapeString.vi"/>
 		</Item>
 		<Item Name="Path" Type="Folder">
-			<Property Name="NI.LibItem.Scope" Type="Int">2</Property>
+			<Property Name="NI.LibItem.Scope" Type="Int">4</Property>
 			<Item Name="ResolveHostRoot.vi" Type="VI" URL="../Support/Path/ResolveHostRoot.vi"/>
 		</Item>
 		<Item Name="Severity" Type="Folder">

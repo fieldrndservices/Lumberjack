@@ -246,6 +246,16 @@ than the binary diff.
   and named relay queues); unit tests run parallel. Remaining launched-actor tests:
   file mechanics (two files, rollover, calendar tree), fault isolation, per-appender
   threshold, shutdown flush / shutdown-on-error, CatchError.
+- **5030 masks a failed default-file appender startup (diagnosability gap):** when
+  `enableDefaultFile = TRUE` but the default FileAppender cannot open its sink (no
+  writable root / host path resolved), the failure surfaces as a generic 5030
+  readiness-timeout rather than a descriptive file/path error, so the operator
+  cannot distinguish "manager did not start" from "log file could not be created."
+  Surfaced while building `LMBR-T-011` (a default file was mistakenly enabled in the
+  relay-only fixture). Consider surfacing the appender's open error directly, or a
+  finer error code, when the file-mechanics cluster (T-034/039/042) is built. No
+  code change yet; the readiness barrier behaves correctly, only the reported cause
+  is coarse.
 - **Doc-Terminal-Audit re-opened:** the barrier/shutdown VIs introduced
   description gaps and stale count-based text; see `Doc-Terminal-Audit.md` §5 for
   the fix list to clear before submitting.

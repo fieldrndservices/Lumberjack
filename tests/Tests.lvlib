@@ -26,15 +26,21 @@
 		<Item Name="Unit Test Template.vi" Type="VI" URL="../Unit/Unit Test Template.vi"/>
 	</Item>
 	<Item Name="Integration" Type="Folder">
+		<Property Name="NI.SortType" Type="Int">0</Property>
 		<Item Name="Delivery - broadcast.vi" Type="VI" URL="../Integration/Delivery - broadcast.vi"/>
 		<Item Name="Delivery - single appender.vi" Type="VI" URL="../Integration/Delivery - single appender.vi"/>
+		<Item Name="Filtering - global gate.vi" Type="VI" URL="../Integration/Filtering - global gate.vi"/>
+		<Item Name="Filtering - mirror mode.vi" Type="VI" URL="../Integration/Filtering - mirror mode.vi"/>
+		<Item Name="Filtering - per-appender threshold.vi" Type="VI" URL="../Integration/Filtering - per-appender threshold.vi"/>
 		<Item Name="Registry - unregister silences appender.vi" Type="VI" URL="../Integration/Registry - unregister silences appender.vi"/>
 		<Item Name="Relay - filtered tap.vi" Type="VI" URL="../Integration/Relay - filtered tap.vi"/>
 		<Item Name="Relay - Message Mode.vi" Type="VI" URL="../Integration/Relay - Message Mode.vi"/>
 	</Item>
 	<Item Name="Unit" Type="Folder">
+		<Item Name="Config - DTO round trip.vi" Type="VI" URL="../Unit/Config - DTO round trip.vi"/>
 		<Item Name="Config - resolve.vi" Type="VI" URL="../Unit/Config - resolve.vi"/>
 		<Item Name="Config - validate.vi" Type="VI" URL="../Unit/Config - validate.vi"/>
+		<Item Name="Enum - DropPolicy and FilterMode.vi" Type="VI" URL="../Unit/Enum - DropPolicy and FilterMode.vi"/>
 		<Item Name="Filter - level range.vi" Type="VI" URL="../Unit/Filter - level range.vi"/>
 		<Item Name="Filter - tag prefix.vi" Type="VI" URL="../Unit/Filter - tag prefix.vi"/>
 		<Item Name="ISO 8601 filename.vi" Type="VI" URL="../Unit/ISO 8601 filename.vi"/>
@@ -42,11 +48,14 @@
 		<Item Name="Layout - ISO 8601 timestamp.vi" Type="VI" URL="../Unit/Layout - ISO 8601 timestamp.vi"/>
 		<Item Name="Layout - JSON escape string.vi" Type="VI" URL="../Unit/Layout - JSON escape string.vi"/>
 		<Item Name="Layout - JSON Format.vi" Type="VI" URL="../Unit/Layout - JSON Format.vi"/>
+		<Item Name="Layout - UTC frame agreement.vi" Type="VI" URL="../Unit/Layout - UTC frame agreement.vi"/>
+		<Item Name="Path - ResolveHostRoot.vi" Type="VI" URL="../Unit/Path - ResolveHostRoot.vi"/>
 		<Item Name="Retention prune.vi" Type="VI" URL="../Unit/Retention prune.vi"/>
 		<Item Name="Severity - name round trip.vi" Type="VI" URL="../Unit/Severity - name round trip.vi"/>
 		<Item Name="Severity - rank compare.vi" Type="VI" URL="../Unit/Severity - rank compare.vi"/>
 		<Item Name="Source tag - defaulting.vi" Type="VI" URL="../Unit/Source tag - defaulting.vi"/>
 	</Item>
+	<Item Name="All Integration Tests.vi" Type="VI" URL="../All Integration Tests.vi"/>
 	<Item Name="All Unit Tests.vi" Type="VI" URL="../All Unit Tests.vi"/>
 	<Item Name="Test.vi" Type="VI" URL="../Test.vi"/>
 </Library>

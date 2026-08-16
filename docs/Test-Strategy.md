@@ -191,9 +191,9 @@ archived today still resolves against a future revision of this table.
 | LMBR-T-008 | Severity name round trip | severity name <-> rank round-trips for FATAL..TRACE | U | 005, 050a | tests/Unit/Severity - name round trip.vi |
 | LMBR-T-009 | Threshold 0 | disables all logging | U | 006 | tests/Unit/Severity - rank compare.vi |
 | LMBR-T-010 | Threshold 7+ | passes all levels | U | 006 | tests/Unit/Severity - rank compare.vi |
-| LMBR-T-011 | Global coarse gate | statement above global threshold is not fanned out | U/I | 007, 012 | planned |
+| LMBR-T-011 | Global coarse gate | statement above global threshold is not fanned out | U/I | 007 | tests/Integration/Filtering - global gate.vi |
 | LMBR-T-012 | Per-appender threshold | appender writes only statements passing its own threshold | I | 009 | tests/Integration/Filtering - per-appender threshold.vi |
-| LMBR-T-013 | Mirror mode | accepts everything above threshold | U | 026 | planned |
+| LMBR-T-013 | Mirror mode | accepts everything above threshold | U | 026 | tests/Integration/Filtering - mirror mode.vi |
 | LMBR-T-014 | Routed level range | accepts only within the inclusive rank band [levelMin, levelMax] (log4j LevelRangeFilter semantics: levelMin most severe, levelMax least severe) | U | 026 | tests/Unit/Filter - level range.vi |
 | LMBR-T-015 | Routed single level | levelMin == levelMax accepts exactly that one level | U | 026 | tests/Unit/Filter - level range.vi |
 | LMBR-T-016 | Tag prefix match | `app.db` matches `app.db` and `app.db.query`, not `app.database` (dot-boundary, via `RoutedFilterMatch`) | U | 027 | tests/Unit/Filter - tag prefix.vi |
@@ -204,7 +204,7 @@ archived today still resolves against a future revision of this table.
 |---|---|---|---|---|---|
 | LMBR-T-017 | Default tag | unset tag defaults to origin VI base name | U | 013, 017 | tests/Unit/Source tag - defaulting.vi |
 | LMBR-T-018 | Dot sanitization | dots in a VI-derived default become single-node (no false hierarchy) | U | 013 | tests/Unit/Source tag - defaulting.vi |
-| LMBR-T-019 | Explicit tag | supplied tag is used verbatim | I | 013 | planned |
+| LMBR-T-019 | Explicit tag | supplied tag is used verbatim | I | 013 | tests/Integration/Source tag - explicit.vi |
 
 ### 4.4 Configuration
 
@@ -228,7 +228,7 @@ archived today still resolves against a future revision of this table.
 |---|---|---|---|---|---|
 | LMBR-T-029 | Single appender delivery | a statement reaches the one registered appender | I | 019 | tests/Integration/Delivery - single appender.vi |
 | LMBR-T-030 | Multi-appender broadcast | a statement reaches all registered appenders | I | 019, 028 | tests/Integration/Delivery - broadcast.vi |
-| LMBR-T-031 | Register at runtime | a newly registered appender begins receiving | I | 020, 028 | planned |
+| LMBR-T-031 | Register at runtime | a newly registered appender begins receiving | I | 020, 028 | tests/Integration/Registry - register at runtime.vi |
 | LMBR-T-032 | Unregister at runtime | an unregistered appender stops receiving and flushes | I | 020 | tests/Integration/Registry - unregister silences appender.vi |
 | LMBR-T-033 | Fault isolation | a stopped/faulted appender does not block delivery to others | I | 021 | planned |
 | LMBR-T-034 | Two files, distinct roots | mirror file and errors-only file receive the correct subsets | I | 032, 039, 040 | planned |

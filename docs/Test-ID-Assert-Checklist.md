@@ -359,6 +359,66 @@ pending); not a Caraya assert.
 
 ## Integration tier
 
+### tests/Integration/Registry - register at runtime.vi  (T-031 -> SRS-020/028)  — BUILT
+
+VI Documentation line: `Implements LMBR-T-031 -> SRS-020, SRS-028. Assert-level IDs: Test-ID-Assert-Checklist.md.`
+
+- [x] `LMBR-T-031-a relayA first delivered message = "reg-before" (baseline active before B existed)`
+- [x] `LMBR-T-031-b relayA second delivered message = "reg-after" (A still receiving, SRS-028)`
+- [x] `LMBR-T-031-c relayB first delivered message = "reg-after" (newly registered appender begins receiving)`
+- [x] `LMBR-T-031-d relayB second dequeue times out (B did not retroactively receive "reg-before")`
+
+Note: copy T-032 (unregister) run forward. `Open test manager` enableDefaultFile
+FALSE, global ALL. Register A (baseline), log `"reg-before"`, then register B at
+runtime and WAIT on the `IDPresent "relayB"` snapshot barrier before logging
+`"reg-after"` (removes the registration race). `-031-c`/`-031-d` are the core claim:
+B receives the post-registration statement and only that one. `-031-a`/`-031-b`
+prove A is a live baseline throughout so a B failure isn't a dead manager.
+
+VI Documentation line: `Implements LMBR-T-019 -> SRS-013. Assert-level IDs: Test-ID-Assert-Checklist.md.`
+
+- [x] `LMBR-T-019-a relayA delivered message = "tag-explicit"`
+- [x] `LMBR-T-019-b relayA delivered sourceTag = "app.comms.tcp" (explicit tag used verbatim)`
+
+Note: copy T-029 (single-appender delivery). One relay `A`, mirror/ALL, `global
+threshold = ALL`, `enableDefaultFile = FALSE`. Log INFO `"tag-explicit"` with the
+`sourceTag` input explicitly wired to `"app.comms.tcp"`. The tag is hierarchical and
+not the origin VI base name, so `-019-b` proves the supplied tag flows through
+verbatim (dots preserved, not sanitized or regenerated); the default-tag path is
+covered by the unit test. `-019-a` guards that `-019-b` reads a real delivered
+element. Separate asserts (no AND) so "not delivered" vs "wrong tag" are distinct.
+
+VI Documentation line: `Implements LMBR-T-013 -> SRS-026. Assert-level IDs: Test-ID-Assert-Checklist.md.`
+
+- [x] `LMBR-T-013-a relayA first delivered message = "mir-error"`
+- [x] `LMBR-T-013-b relayA second delivered message = "mir-warn"`
+- [x] `LMBR-T-013-c relayA third dequeue timed out (below-threshold INFO dropped; mirror honors threshold)`
+
+Note: one relay `A`, `FilterMode = Mirror`, `threshold = WARN`; `global threshold =
+ALL` so stage-1 never interferes; `enableDefaultFile = FALSE`. Log across different
+tags and passing levels to prove mirror is tag/band-agnostic (distinct from T-012's
+threshold test): ERROR `"mir-error"`/app.alpha, WARN `"mir-warn"`/sys.beta (both
+pass), then INFO `"mir-info"`/net.gamma (below WARN, dropped). `-013-c` asserts the
+Dequeue `timed out?` boolean, pinning the "accepts everything *above threshold*"
+clause of mirror mode.
+
+### tests/Integration/Filtering - global gate.vi  (T-011 -> SRS-007)  — BUILT
+
+VI Documentation line: `Implements LMBR-T-011 -> SRS-007. Assert-level IDs: Test-ID-Assert-Checklist.md.`
+
+- [x] `LMBR-T-011-a relayA first delivered message = "glob-warn"`
+- [x] `LMBR-T-011-b relayA second dequeue timed out (INFO blocked at stage 1; relayA received exactly one)`
+- [x] `LMBR-T-011-c relayB first delivered message = "glob-warn"`
+- [x] `LMBR-T-011-d relayB second dequeue timed out (INFO blocked at stage 1; relayB received exactly one)`
+
+Note: copy the T-012 two-relay fixture; both relays `mode = mirror`, `threshold =
+ALL` (open, so the global gate is the only discriminator). Set `global threshold =
+WARN` at Initialize. Log WARN `"glob-warn"` then INFO `"glob-info"` (sourceTag
+`"GLB"`). `-011-b`/`-011-d` are the defining claim: the INFO fails the caller-side
+gate and reaches no appender (proven across both channels), which distinguishes a
+global gate from the per-appender threshold. Relabel all four IDs immediately after
+copying, and set thresholds to ALL (not INFO/WARN) so this is not a re-test of T-012.
+
 ### tests/Integration/Filtering - per-appender threshold.vi  (T-012 -> SRS-009)  — BUILT
 
 VI Documentation line: `Implements LMBR-T-012 -> SRS-009. Assert-level IDs: Test-ID-Assert-Checklist.md.`
@@ -445,16 +505,15 @@ VI Documentation line: `Implements LMBR-T-045 -> SRS-023, SRS-026. Assert-level 
 
 ## Coverage note
 
-153 asserts across 24 VIs, all tagged. Case IDs exercised: T-001, T-002, T-003,
-T-004, T-005, T-007, T-008, T-009, T-010, T-012, T-014, T-015, T-016, T-017, T-018,
-T-020, T-022, T-023, T-024, T-025, T-026, T-027, T-029, T-030, T-032, T-035, T-036,
-T-037, T-038, T-040, T-041, T-043, T-045, T-056, T-057, T-058, T-060, T-061.
+166 asserts across 28 VIs, all tagged. Case IDs exercised: T-001, T-002, T-003,
+T-004, T-005, T-007, T-008, T-009, T-010, T-011, T-012, T-013, T-014, T-015, T-016,
+T-017, T-018, T-019, T-020, T-022, T-023, T-024, T-025, T-026, T-027, T-029, T-030,
+T-031, T-032, T-035, T-036, T-037, T-038, T-040, T-041, T-043, T-045, T-056, T-057,
+T-058, T-060, T-061.
 The pure-VI tier is complete (T-059 is an inspection item recorded in
-`docs/Path-Derivation-Audit.md`). Integration filtering cluster in progress. Still
+`docs/Path-Derivation-Audit.md`). Filtering trio done (T-011/012/013). Still
 `planned` in Test-Strategy §4:
 
-- **T-011 (Global coarse gate)**, **T-013 (Mirror mode)**, **T-019 (Explicit
-  tag)**, **T-031 (Register at runtime)**, **T-033 (Fault isolation)** — the rest
-  of the delivery & filtering cluster.
+- **T-033 (Fault isolation)** — last case in the delivery & filtering cluster.
 - File mechanics, backpressure, and lifecycle clusters remain.
 - **T-021** (ConfigReader backlog) and **T-028** (resolve-once) remain parked.
