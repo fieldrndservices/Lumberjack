@@ -359,7 +359,30 @@ pending); not a Caraya assert.
 
 ## Integration tier
 
-### tests/Integration/Registry - register at runtime.vi  (T-031 -> SRS-020/028)  — BUILT
+### tests/Integration/Fault Isolation - stopped appender.vi  (T-033 -> SRS-021)  — BUILT
+
+VI Documentation line: `Implements LMBR-T-033 -> SRS-021. Assert-level IDs: Test-ID-Assert-Checklist.md.`
+
+- [x] `LMBR-T-033-a relayA first delivered message = "iso-before" (both appenders healthy pre-fault)`
+- [x] `LMBR-T-033-b relayA second delivered message = "iso-after" (delivery to healthy appender continues after B stopped)`
+- [x] `LMBR-T-033-c Log("iso-after") returned within bound (caller not blocked by the faulted appender)`
+- [x] `LMBR-T-033-d Log("iso-after") error out clean (fault not propagated to the caller)`
+
+Verified against the user-reported 170-pass run; assert-text reconciliation and the
+0-fail / no-dup grep to be re-confirmed when the results file re-syncs from OneDrive.
+
+Note: new test-support VI `Stop Appender By Id.vi` (in Tests.lvlib, friend of
+Lumberjack) reads B's `Message Enqueuer` from the `Snapshot` (RegistryEntry
+{id, enqueuer}) and sends AF `Send Normal Stop`; B stays in the manager registry, so
+the manager still broadcasts to a dead enqueuer. No production code change. Two relays
+A/B (queue, mirror, ALL), `enableDefaultFile = FALSE`, `global threshold = ALL`. Log
+`"iso-before"`, stop B, then log `"iso-after"` wrapped in Tick Count (elapsed) and
+capture `error out`. `-033-b` is the isolation claim; `-033-c`/`-033-d` cover
+caller-not-blocked (time + no error propagation). Log `"iso-after"` immediately after
+the stop to bias toward broadcasting while B's dead enqueuer is still registered. This
+stresses the manager broadcast loop; if it doesn't tolerate a per-appender enqueue
+error, T-033 fails and surfaces a real SRS-021 defect. 500 ms bound is generous to
+avoid flakiness.
 
 VI Documentation line: `Implements LMBR-T-031 -> SRS-020, SRS-028. Assert-level IDs: Test-ID-Assert-Checklist.md.`
 
@@ -505,15 +528,19 @@ VI Documentation line: `Implements LMBR-T-045 -> SRS-023, SRS-026. Assert-level 
 
 ## Coverage note
 
-166 asserts across 28 VIs, all tagged. Case IDs exercised: T-001, T-002, T-003,
+170 asserts across 29 VIs, all tagged. Case IDs exercised: T-001, T-002, T-003,
 T-004, T-005, T-007, T-008, T-009, T-010, T-011, T-012, T-013, T-014, T-015, T-016,
 T-017, T-018, T-019, T-020, T-022, T-023, T-024, T-025, T-026, T-027, T-029, T-030,
-T-031, T-032, T-035, T-036, T-037, T-038, T-040, T-041, T-043, T-045, T-056, T-057,
-T-058, T-060, T-061.
+T-031, T-032, T-033, T-035, T-036, T-037, T-038, T-040, T-041, T-043, T-045, T-056,
+T-057, T-058, T-060, T-061.
 The pure-VI tier is complete (T-059 is an inspection item recorded in
-`docs/Path-Derivation-Audit.md`). Filtering trio done (T-011/012/013). Still
-`planned` in Test-Strategy §4:
+`docs/Path-Derivation-Audit.md`). Delivery & filtering cluster complete
+(T-011/012/013/019/031/033). Remaining clusters, all `planned` in Test-Strategy §4:
 
-- **T-033 (Fault isolation)** — last case in the delivery & filtering cluster.
+- **File mechanics:** T-006, T-034, T-039, T-042 (needs the temp-root fixture and
+  enables the default file).
+- **Backpressure:** T-044, T-046-T-051.
+- **Lifecycle:** T-052-T-055.
+- Parked: T-021 (ConfigReader backlog), T-028 (resolve-once).
 - File mechanics, backpressure, and lifecycle clusters remain.
 - **T-021** (ConfigReader backlog) and **T-028** (resolve-once) remain parked.

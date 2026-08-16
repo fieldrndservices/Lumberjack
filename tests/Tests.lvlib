@@ -24,6 +24,7 @@
 		<Item Name="Setup - create temp root.vi" Type="VI" URL="../Support/Setup - create temp root.vi"/>
 		<Item Name="Tear Down - delete root temp.vi" Type="VI" URL="../Support/Tear Down - delete root temp.vi"/>
 		<Item Name="Unit Test Template.vi" Type="VI" URL="../Unit/Unit Test Template.vi"/>
+		<Item Name="Stop Appender by ID.vi" Type="VI" URL="../Support/Stop Appender by ID.vi"/>
 	</Item>
 	<Item Name="Integration" Type="Folder">
 		<Property Name="NI.SortType" Type="Int">0</Property>
@@ -32,9 +33,11 @@
 		<Item Name="Filtering - global gate.vi" Type="VI" URL="../Integration/Filtering - global gate.vi"/>
 		<Item Name="Filtering - mirror mode.vi" Type="VI" URL="../Integration/Filtering - mirror mode.vi"/>
 		<Item Name="Filtering - per-appender threshold.vi" Type="VI" URL="../Integration/Filtering - per-appender threshold.vi"/>
+		<Item Name="Registry - register at runtime.vi" Type="VI" URL="../Integration/Registry - register at runtime.vi"/>
 		<Item Name="Registry - unregister silences appender.vi" Type="VI" URL="../Integration/Registry - unregister silences appender.vi"/>
 		<Item Name="Relay - filtered tap.vi" Type="VI" URL="../Integration/Relay - filtered tap.vi"/>
 		<Item Name="Relay - Message Mode.vi" Type="VI" URL="../Integration/Relay - Message Mode.vi"/>
+		<Item Name="Source tag - explicit.vi" Type="VI" URL="../Integration/Source tag - explicit.vi"/>
 	</Item>
 	<Item Name="Unit" Type="Folder">
 		<Item Name="Config - DTO round trip.vi" Type="VI" URL="../Unit/Config - DTO round trip.vi"/>

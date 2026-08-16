@@ -10,6 +10,32 @@ human review before being treated as authoritative.
 
 ---
 
+## 0. Completeness rule (normative)
+
+A VI is **documented** only when all of the following are present. This is the
+definition used by the audit (`Doc-Terminal-Audit.md`); anything short of it is a
+gap, not a style preference.
+
+1. **VI Documentation string** — a description in the VI's own Documentation field,
+   following the content shape in section 1.
+2. **Every non-exempt connector-pane terminal** carries **both** a Description and a
+   Tip (section 2).
+
+**Exempt terminals — and only these:**
+
+- The error cluster: `error in (no error)`, `error out`, and its `status` / `code` /
+  `source` subfields (LabVIEW boilerplate stands).
+- Dynamic-dispatch / class **object** terminals: `<Class> in` / `<Class> out` and
+  any bare object terminal.
+
+Nothing else is exempt. Every scalar/string/path/enum/cluster/array data terminal,
+input or output, needs a Description **and** a Tip. Array element labels and cluster
+field labels are not connector terminals and are out of scope (see
+`Doc-Terminal-Audit.md` §3), but the array/cluster **control** itself is a terminal
+and must be documented.
+
+---
+
 ## 1. VI description template
 
 Every non-trivial VI is described with the following sections, in this order.
@@ -19,13 +45,23 @@ reference.
 - **Path** — repository path of the VI (e.g. `src/Public/Logger.lvclass/Shutdown.vi`).
 - **Owning library** — the `.lvlib` / class that owns it, plus scope
   (public / community / protected / private) and any friend relationship.
-- **VI Documentation** — the description shown in Context Help: what the VI does
-  and why, in a few sentences. This is the text entered in the VI's own
-  Documentation field. When written up for paste (e.g. in `Cleanup-Suggested-Text`),
-  present it in a **literal/fenced code block with one line per paragraph** (no
-  hard mid-sentence wraps), so it copies into the LabVIEW Documentation field
-  without soft-wrap line breaks turning into literal newlines. LabVIEW does its own
-  wrapping.
+- **VI Documentation** — the description shown in Context Help, entered in the VI's
+  own Documentation field. **Required content shape**, in this order, as prose (not
+  a bulleted list inside the field):
+  1. **Purpose** — one sentence: what the VI does and why.
+  2. **Contract/behavior** — how inputs map to outputs; the key rule(s), default(s),
+     and any error/warning codes raised, naming the SRS item(s) where relevant.
+  3. **Scope line** — owning library/class, scope (public / community / protected /
+     private), and any friend relationship; for pure helpers note "no I/O" / "no
+     state" if true.
+  4. **Test VIs only** — end with the `Implements LMBR-T-### -> SRS-### ...` line
+     (section 4).
+
+  When written up for paste, present the string in a **fenced code block with one
+  line per paragraph** (no hard mid-sentence wraps), so it copies into the LabVIEW
+  Documentation field cleanly. LabVIEW does its own wrapping. Never leave a
+  placeholder (e.g. "Update with test documentation"); an unfinished VI is an
+  undocumented VI.
 - **Connector Pane** — the terminals: inputs and outputs, with types. Note when
   the error cluster is present, and any deliberate omission (e.g. a pure helper
   with no error terminals).
@@ -42,14 +78,19 @@ template and additionally obey the assert-naming standard in section 4.
 
 ## 2. Terminal Description and Tips
 
-Each real connector-pane data terminal carries **two** things:
+Each non-exempt connector-pane data terminal (per the section 0 rule) carries
+**two** things, and both are required:
 
-- **Description** — one line stating what the terminal carries (the text in the
-  terminal's description field, shown in Context Help / the terminal detail).
-- **Tip** — a short hover string (the tip strip shown when hovering the terminal
-  on the connector pane). Briefer than the description; a phrase, not a sentence.
+- **Description** — a full sentence stating what the terminal carries, including
+  units, the valid set or range, and the default where relevant. This is the text
+  in the terminal's description field (Context Help / terminal detail). Name the
+  offending value or valid members where it mirrors an error code.
+- **Tip** — a short hover phrase (the tip strip), roughly **8 words or fewer**, no
+  trailing period. It must be distinct from the description (a label, not a repeat),
+  and for an optional input should note the default, e.g. `Level cutoff (default
+  ALL)`.
 
-Present them as a small table:
+Present them as a table with exactly these columns:
 
 | Terminal | Description | Tip |
 |---|---|---|
@@ -67,6 +108,24 @@ Conventions:
   description need not be rewritten.
 - Descriptions name the offending value or valid set where relevant (mirrors the
   error-message convention in `Error-Codes.md`).
+
+### 2.1 Standard deliverable format (how documentation is handed off)
+
+Whenever documentation is authored for a VI (by the assistant or a developer), it
+is delivered in exactly this shape, so the output never drifts and can be pasted
+straight into LabVIEW:
+
+1. A one-line header: VI path, owning library/class, scope, friend relationship.
+2. **VI Documentation** in a fenced block (one line per paragraph), per the section
+   1 content shape.
+3. A **terminal table** with columns `Terminal | Description | Tip`, one row per
+   non-exempt terminal, inputs first then outputs.
+4. An **Exempt (not documented)** line naming the class/error terminals skipped, so
+   a reviewer can see nothing was forgotten (it was deliberately excluded).
+
+A hand-off missing the terminal table, or the exempt line, is incomplete. If a
+request is "give me the documentation for `<VI>`", the answer is all four parts,
+never just the VI Documentation string.
 
 ---
 
