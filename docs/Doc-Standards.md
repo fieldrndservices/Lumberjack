@@ -118,6 +118,15 @@ make each assert traceable from the run report back to a requirement, so a
   the §4 matrix, traced to its SRS item, before its asserts are named.
 - **Every assert gets a meaningful name.** Replace Caraya default names (e.g.
   `Assert Equal Value_Variant`) with a phrase stating what is checked.
+- **Every assert specifies its inputs.** The VI description shall state, per
+  assert, the exact input data terminal(s) of the VI-under-test that are
+  exercised, the concrete value fed to each, and the expected result (return value
+  or error code). A reviewer must be able to reconstruct each assert from the
+  description alone, with no unstated inputs. Where asserts mutate a shared
+  baseline, state the baseline once and then, per assert, only the single terminal
+  and value that changes. Choose distinctive, non-default values so a pass-through
+  or defaulting bug cannot satisfy a check spuriously. This per-assert input
+  table/list is part of the Block Diagram section (section 1) for every test VI.
 - **The VI Documentation field lists the case IDs the VI implements** and the SRS
   they trace to (e.g. "Implements LMBR-T-002, T-003 -> SRS-012"), and points to
   `Test-ID-Assert-Checklist.md`, which holds the full per-assert suffix map.

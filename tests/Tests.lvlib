@@ -7,15 +7,9 @@
 
 </Property>
 	<Property Name="NI.LV.All.SourceOnly" Type="Bool">true</Property>
+	<Property Name="NI.SortType" Type="Int">3</Property>
 	<Item Name="Friends List" Type="Friends List">
 		<Item Name="Lumberjack.lvlib" Type="Friended Library" URL="../../src/Lumberjack.lvlib"/>
-	</Item>
-	<Item Name="Integration" Type="Folder">
-		<Item Name="Delivery - broadcast.vi" Type="VI" URL="../Integration/Delivery - broadcast.vi"/>
-		<Item Name="Delivery - single appender.vi" Type="VI" URL="../Integration/Delivery - single appender.vi"/>
-		<Item Name="Registry - unregister silences appender.vi" Type="VI" URL="../Integration/Registry - unregister silences appender.vi"/>
-		<Item Name="Relay - filtered tap.vi" Type="VI" URL="../Integration/Relay - filtered tap.vi"/>
-		<Item Name="Relay - Message Mode.vi" Type="VI" URL="../Integration/Relay - Message Mode.vi"/>
 	</Item>
 	<Item Name="Support" Type="Folder">
 		<Property Name="NI.LibItem.Scope" Type="Int">2</Property>
@@ -31,7 +25,16 @@
 		<Item Name="Tear Down - delete root temp.vi" Type="VI" URL="../Support/Tear Down - delete root temp.vi"/>
 		<Item Name="Unit Test Template.vi" Type="VI" URL="../Unit/Unit Test Template.vi"/>
 	</Item>
+	<Item Name="Integration" Type="Folder">
+		<Item Name="Delivery - broadcast.vi" Type="VI" URL="../Integration/Delivery - broadcast.vi"/>
+		<Item Name="Delivery - single appender.vi" Type="VI" URL="../Integration/Delivery - single appender.vi"/>
+		<Item Name="Registry - unregister silences appender.vi" Type="VI" URL="../Integration/Registry - unregister silences appender.vi"/>
+		<Item Name="Relay - filtered tap.vi" Type="VI" URL="../Integration/Relay - filtered tap.vi"/>
+		<Item Name="Relay - Message Mode.vi" Type="VI" URL="../Integration/Relay - Message Mode.vi"/>
+	</Item>
 	<Item Name="Unit" Type="Folder">
+		<Item Name="Config - resolve.vi" Type="VI" URL="../Unit/Config - resolve.vi"/>
+		<Item Name="Config - validate.vi" Type="VI" URL="../Unit/Config - validate.vi"/>
 		<Item Name="Filter - level range.vi" Type="VI" URL="../Unit/Filter - level range.vi"/>
 		<Item Name="Filter - tag prefix.vi" Type="VI" URL="../Unit/Filter - tag prefix.vi"/>
 		<Item Name="ISO 8601 filename.vi" Type="VI" URL="../Unit/ISO 8601 filename.vi"/>

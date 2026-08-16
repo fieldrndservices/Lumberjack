@@ -5,8 +5,12 @@ built test VIs, so each assert's pass/fail surfaces under its own ID in
 `tests/Test Results/LumberjackTestResults.txt` and the HTML report, while still
 rolling up to the case-level Test ID that traces to the SRS (Test-Strategy §4).
 
-**Status:** 101/101 built asserts tagged and passing (verified against the
-2026-08-13 18:48 run), 0 failures, no duplicate IDs. Draft record, not a signed
+**Status:** 148/148 built asserts tagged and passing (verified against the
+2026-08-15 22:47 run), 0 failures, no duplicate IDs. `Path - ResolveHostRoot.vi`
+(T-056/T-057/T-058) is now built and green via the injectable `app kind` seam,
+so the whole pure-VI tier is complete. Remaining pure item is inspection-only:
+T-059 (no self-derived paths). T-021 (ConfigReader backlog) and T-028
+(resolve-once, integration) remain parked. Draft record, not a signed
 verification artifact; still subject to SOP-117 human review before it is treated
 as authoritative.
 
@@ -32,10 +36,11 @@ the consumer`). Fix the name to `LMBR-T-043-a msgmode-probe reached the consumer
 
 ## Unit tier
 
-### tests/Unit/Layout - CSV quoting.vi  (T-002, T-003 -> SRS-012)
+### tests/Unit/Layout - CSV quoting.vi  (T-001, T-002, T-003 -> SRS-010, SRS-012)
 
-VI Documentation line: `Implements LMBR-T-002, T-003 -> SRS-012. Assert-level IDs: Test-ID-Assert-Checklist.md.`
+VI Documentation line: `Implements LMBR-T-001, T-002, T-003 -> SRS-010, SRS-012. Assert-level IDs: Test-ID-Assert-Checklist.md.`
 
+- [x] `LMBR-T-001-a CSV columns emit in order: timestamp, level, sourceTag, originVI, message`
 - [x] `LMBR-T-002-a Plain field is not quoted`
 - [x] `LMBR-T-002-b Embedded quote doubled and wrapped`
 - [x] `LMBR-T-002-c Delimiter in field forces quoting`
@@ -158,9 +163,218 @@ Note: build `ExistingFiles` as synthetic Path constants (no files on disk).
 Compare `FilesToDelete` as a set, or order the expected array by
 (path, timekey, basename) to match PruneSelection's sort.
 
+### tests/Unit/Config - validate.vi  (T-024, T-026, T-027 -> SRS-048, SRS-033/034/056)
+
+VI Documentation line: `Implements LMBR-T-024, T-026, T-027 -> SRS-048, SRS-033/034/056. Assert-level IDs: Test-ID-Assert-Checklist.md.`
+
+AppenderConfigDTO (baseline A -> ValidateAppenderConfigDTO):
+
+- [x] `LMBR-T-026-a Valid AppenderConfigDTO validates clean, queueBound positive (baseline A)`
+- [x] `LMBR-T-026-b queueBound = -1 accepted (no error)`
+- [x] `LMBR-T-026-c queueBound 0 faults 5022`
+- [x] `LMBR-T-026-d queueBound < -1 faults 5022`
+- [x] `LMBR-T-024-a Empty appender id faults 5024`
+
+FileConfigDTO (baseline F -> ValidateFileConfigDTO):
+
+- [x] `LMBR-T-026-e Valid FileConfigDTO validates clean, no error (baseline F)`
+- [x] `LMBR-T-026-f maxFileSize 0 faults 5022`
+- [x] `LMBR-T-026-g maxFileCount 0 faults 5022`
+- [x] `LMBR-T-024-c Illegal char in baseName faults 5020`
+- [x] `LMBR-T-024-d Illegal char in extension faults 5020`
+
+FilterDTO (baseline Fi -> ValidateFilterDTO):
+
+- [x] `LMBR-T-024-e Valid routed band validates clean, levelMin at least as severe as levelMax (baseline Fi)`
+- [x] `LMBR-T-024-b Routed band with levelMin less severe than levelMax faults 5023`
+
+CheckSchemaVersion:
+
+- [x] `LMBR-T-027-a Valid schemaVersion passes (no error)`
+- [x] `LMBR-T-027-b Unknown schemaVersion faults 5021`
+
+Note: each fault case captures and clears its expected error before the next
+block (these tests generate errors on purpose) and asserts the specific
+`error.code`. **Two independent baselines, one per validator, no composed
+`FileAppenderConfigDTO`:** baseline A = valid `AppenderConfigDTO` via
+`ValidateAppenderConfigDTO` (reused by queueBound `-026-b..d` and empty-id
+`-024-a`); baseline F = valid `FileConfigDTO` via `ValidateFileConfigDTO` (reused by
+the file bounds `-026-f`/`-026-g` and filename `-024-c`/`-024-d`). Each fault mutates
+exactly one field of its baseline, so the fault is attributable to that field,
+which is what makes the shared 5022 (and shared 5020) meaningful. baseline Fi = valid routed
+`FilterDTO` via `ValidateFilterDTO` (`-024-e`), mutated to a reversed band for
+`-024-b`. Level-range convention: `levelMin` is the most-severe bound (lower rank),
+valid when `rank(levelMin) <= rank(levelMax)` (equal = single-level, valid); out of
+order is strictly `rank(levelMin) > rank(levelMax)`, using valid severity names
+(e.g. `levelMin`=DEBUG / `levelMax`=INFO) so the fault is 5023, not 5010. `-027`
+uses `CheckSchemaVersion` directly. DTO field
+types: `schemaVersion`/`id` strings, `queueBound`/`maxFileSize`/`maxFileCount`
+numeric. Confirm the 5020 raise site: if `ValidateFileConfigDTO` does not run the
+filename-safety check, point `-024-c`/`-024-d` at `IsFileNameSafe.vi` directly.
+
+### tests/Unit/Config - resolve.vi  (T-020, T-022, T-023 -> SRS-044/047/048)
+
+VI Documentation line: `Implements LMBR-T-020, T-022, T-023 -> SRS-044, SRS-047, SRS-048. Assert-level IDs: Test-ID-Assert-Checklist.md.`
+
+Resolve (Resolve.vi):
+
+- [x] `LMBR-T-020-a No config path: effective config equals the baseline inputs`
+- [x] `LMBR-T-022-a Defined but missing path is non-fatal (status FALSE)`
+- [x] `LMBR-T-022-b Missing path falls back to the baseline`
+- [x] `LMBR-T-022-c Missing-path warning carries code 5014`
+- [x] `LMBR-T-022-d Missing-path warning source names the missing path`
+- [x] `LMBR-T-023-a Unparseable JSON file fails launch (status TRUE), no fallback`
+- [x] `LMBR-T-023-b Unsupported schemaVersion file fails launch (status TRUE, 5021)`
+
+Note: `-020`/`-022` need no files (empty path / a non-existent path); `-023` needs
+real temp files (malformed JSON and schema-invalid JSON) via the temp-root fixture
+(`Setup - create temp root` / `Tear Down - delete root temp`). Load-bearing claim is
+warning vs fatal: `-022` is status FALSE (non-fatal, SRS-047), `-023` is status TRUE
+(fatal, SRS-048). The missing-file warning and JSON-parse-failure codes are not in
+Error-Codes.md, assert status FALSE/TRUE (+ non-zero for the warning), not a specific
+50xx code, and flag those two for the registry. Capture and clear each expected
+error. Confirm `Resolve.vi` terminals. T-028 (resolve-once) deferred to integration.
+`-023-a` is a JSON **syntax** error (parse failure, native/LabVIEW code); `-023-b`
+is valid JSON with an **unsupported `schemaVersion`** (out-of-set), failing at
+`CheckSchemaVersion` with 5021, present-but-bad content, not a missing field
+(default-fill can make a missing key pass validation).
+
+**T-021 (JSON per-key merge, SRS-046) deferred to the ConfigReader backlog:** the
+current `Merge` does a full-object overwrite (an empty value clobbers the baseline
+rather than falling back), so partial-file / per-key precedence is not yet
+achievable, it needs the presence mask (two-default diff). To be covered by a future
+`Config - merge.vi` when that lands.
+
+### tests/Unit/Enum - DropPolicy and FilterMode.vi  (T-060 -> SRS-050a; T-025 -> SRS-048)
+
+VI Documentation line: `Implements LMBR-T-060 -> SRS-050a; LMBR-T-025 (DropPolicy, FilterMode) -> SRS-048. Assert-level IDs: Test-ID-Assert-Checklist.md.`
+
+Round trip (FromString -> String, assert original name):
+
+- [x] `LMBR-T-060-a DropPolicy "DropOldest" round-trips`
+- [x] `LMBR-T-060-b DropPolicy "DropNewest" round-trips`
+- [x] `LMBR-T-060-c DropPolicy level-aware member round-trips`
+- [x] `LMBR-T-060-d FilterMode "Mirror" round-trips`
+- [x] `LMBR-T-060-e FilterMode "Routed" round-trips`
+- [x] `LMBR-T-060-f DropPolicy round-trips complete with no error (guards DropOldest ordinal-0 false pass)`
+- [x] `LMBR-T-060-g FilterMode round-trips complete with no error (guards Mirror ordinal-0 false pass)`
+
+Unknown name faults (capture and clear):
+
+- [x] `LMBR-T-025-b DropPolicyFromString unknown name faults 5011`
+- [x] `LMBR-T-025-c FilterModeFromString unknown name faults 5012`
+- [x] `LMBR-T-025-d DropPolicy unknown-name source names the offending value and lists the accepted set`
+- [x] `LMBR-T-025-e FilterMode unknown-name source names the offending value and lists the accepted set`
+
+Note: round-trip form (name -> FromString -> String -> name) exercises both the
+width-fixed FromString and the String direction in one assert, guarding the
+I32-vs-U16 ordinal-0 bug. Confirm the DropPolicy level-aware member name for `-060-c`.
+The **non-default** members (`DropNewest`, level-aware, `Routed`) are the real
+catchers: their expected value differs from the ordinal-0 default, so a wrong value
+or a silent error that leaves the default output both mismatch and fail. The
+ordinal-0 members (`-060-a` DropOldest, `-060-d` Mirror) are vacuous on their own,
+their expected value equals the default/failure output, so a no-error guard makes
+them trustworthy by catching the error-skip-leaves-default case. One guard per enum
+group, since the two ordinal-0 members sit in separate groups: `-060-f` DropPolicy
+valid round-trips with no error (guards DropOldest), `-060-g` FilterMode valid
+round-trips with no error (guards Mirror). Each sits on its group's error wire,
+after that group's ordinal-0 round-trip.
+T-025 spans two VIs (Severity - name round trip holds `-a`; these add `-b`..`-e`),
+continuous suffixes. `-025-d`/`-025-e` are the context asserts: the fault source must
+name the offending value and list the accepted set (T-025 "with the accepted set
+listed", SRS-048). Check the source contains the bad name passed in and a known
+valid member; if the runtime source shows the literal `<<context>>` placeholder
+instead of the value, the token substitution isn't firing (fix at the chokepoint
+helper) and these asserts correctly fail. Per Doc-Standards §4 the per-assert input
+table lives in this VI's Block Diagram description.
+
+### tests/Unit/Config - DTO round trip.vi  (T-061 -> SRS-050a)
+
+VI Documentation line: `Implements LMBR-T-061 -> SRS-050a. Assert-level IDs: Test-ID-Assert-Checklist.md.`
+
+Round trip (native -> FromNative -> DTO -> FromDTO -> native, assert equals original):
+
+- [x] `LMBR-T-061-a FilterDTO round-trips (native == round-tripped)`
+- [x] `LMBR-T-061-b AppenderConfigDTO round-trips`
+- [x] `LMBR-T-061-c FileConfigDTO round-trips`
+- [x] `LMBR-T-061-d FileAppenderConfigDTO round-trips`
+- [x] `LMBR-T-061-e LumberjackConfigDTO round-trips`
+
+Note: build each native cluster with distinctive non-default values (the T-020
+baseline set) so a dropped/defaulted field mismatches. Because the expected value is
+never the default, the value comparison alone catches drops and silent errors, no
+ordinal-0-style coincidence, so no separate no-error guard is needed here. The
+round-trip exercises the enum mappers (DropPolicy/FilterMode/Severity) and
+Path<->String in situ; use canonical path values (absolute, no trailing slash) to
+avoid Path/String normalization false-mismatches. Composite pairs (`-d`,`-e`) overlap
+the leaves (`-a`/`-b`/`-c`) but isolate which mapper drops a field. Confirm mapper
+terminal names. Per Doc-Standards §4 the per-assert input table lives in the Block
+Diagram description.
+
+### tests/Unit/Layout - UTC frame agreement.vi  (T-038 -> SRS-011/035/036)  — BUILT
+
+VI Documentation line: `Implements LMBR-T-038 -> SRS-011, SRS-035, SRS-036. Assert-level IDs: Test-ID-Assert-Checklist.md.`
+
+- [x] `LMBR-T-038-a Filename date matches layout timestamp date (useUTC=TRUE)`
+- [x] `LMBR-T-038-b Calendar folder date matches layout timestamp date (useUTC=TRUE)`
+- [x] `LMBR-T-038-c Filename date matches layout timestamp date (useUTC=FALSE)`
+- [x] `LMBR-T-038-d Calendar folder date matches layout timestamp date (useUTC=FALSE)`
+
+Note: three renderings from one instant, `FormatTimeString` (layout line), `ISO8601FileName`
+(filename), `BaseFolder` (calendar folder, `calendarFolderTree=TRUE`); reduce each to
+`YYYYMMDD` and compare filename and folder to the layout timestamp as the reference frame
+(the layout frame is anchored by T-004). Two comparisons per useUTC lane, kept as separate
+asserts (not one AND-ed "all three agree") so a failure names which rendering drifts.
+Use a boundary instant near UTC midnight so UTC != local and a frame mismatch is
+observable; on a UTC-set machine local == UTC so the lanes can't distinguish frames
+(asserts still pass when correct). Confirm `FormatTimeString` / `ISO8601FileName` /
+`BaseFolder` terminals (timestamp, useUTC; BaseFolder also rootFolder + calendarFolderTree).
+
+### tests/Unit/Path - ResolveHostRoot.vi  (T-056, T-057, T-058 -> SRS-064/039)  — BUILT
+
+VI Documentation line: `Implements LMBR-T-056, T-057, T-058 -> SRS-064, SRS-039. Assert-level IDs: Test-ID-Assert-Checklist.md.`
+
+- [x] `LMBR-T-056-a Explicit host path is returned verbatim`
+- [x] `LMBR-T-057-a Empty host path (dev system) resolves to Application Directory, not the library path`
+- [x] `LMBR-T-058-a Built-app (RTS) with no host path faults with error 5000`
+- [x] `LMBR-T-058-b Explicit path wins over RTS fault (returned verbatim, no error)`
+- [x] `LMBR-T-058-c Resolved root is Not A Path when the 5000 fault is raised`
+
+Decision (SOP-117 draft): T-058 is made testable from the IDE by adding an
+injectable `app kind` input to `ResolveHostRoot`, typedef enum `HostAppKind`
+{`Auto`(0), `DevelopmentSystem`, `RunTimeSystem`}, default `Auto`. `Auto` reads
+the real `Application.Kind` so existing (unwired) callers are unchanged; the test
+wires `RunTimeSystem` to force the built-app branch. Decision order in the VI is
+unchanged: explicit host path wins first, then RTS -> 5000, else Application
+Directory. `-058-a` forces the fault; `-058-b` pins the precedence (explicit path
+beats the RTS fault); `-058-c` pins the fail-closed contract (resolved root is Not
+A Path on the 5000 fault, never the executable folder). `RunTimeSystem` is a distinctive non-default (Auto is
+ordinal 0), so an unwired terminal cannot false-pass. SRS-064 still holds:
+external-path computation stays isolated in this one VI and `app kind` is not a
+path. T-059 (no self-derived paths) is an inspection item recorded in
+`docs/Path-Derivation-Audit.md` (automated scan done, manual diagram ticks
+pending); not a Caraya assert.
+
 ---
 
 ## Integration tier
+
+### tests/Integration/Filtering - per-appender threshold.vi  (T-012 -> SRS-009)  — BUILT
+
+VI Documentation line: `Implements LMBR-T-012 -> SRS-009. Assert-level IDs: Test-ID-Assert-Checklist.md.`
+
+- [x] `LMBR-T-012-a relayA first delivered message = "thr-info"`
+- [x] `LMBR-T-012-b relayA second delivered message = "thr-warn"`
+- [x] `LMBR-T-012-c relayA third dequeue timed out (relayA received exactly two)`
+- [x] `LMBR-T-012-d relayB first delivered message = "thr-warn" (INFO dropped by WARN threshold)`
+- [x] `LMBR-T-012-e relayB third dequeue timed out (relayB received exactly one)`
+
+Note: relay capture-probe fixture (same as T-030), `disable default file? = TRUE`,
+no temp root. Two relay appenders, both `FilterMode = Mirror` so threshold is the
+only discriminator; A threshold `INFO`, B threshold `WARN`. Log INFO `"thr-info"`
+then WARN `"thr-warn"` (sourceTag `"THR"`). `-012-d`/`-012-e` prove B's threshold
+discriminated (first delivered is the WARN, INFO dropped); `-012-b` proves A took
+both. Use the T-030 timeout to avoid AF queue-latency false negatives (SRS-053).
 
 ### tests/Integration/Delivery - single appender.vi  (T-029 -> SRS-019)
 
@@ -231,13 +445,16 @@ VI Documentation line: `Implements LMBR-T-045 -> SRS-023, SRS-026. Assert-level 
 
 ## Coverage note
 
-101 asserts across 16 VIs, all tagged. Case IDs exercised: T-002, T-003, T-004,
-T-005, T-007, T-008, T-009, T-010, T-014, T-015, T-016, T-017, T-018, T-025,
-T-029, T-030, T-032, T-035, T-036, T-037, T-040, T-041, T-043, T-045. Every other
-Test ID in Test-Strategy §4 is `planned` (no built VI). Two coverage gaps to keep
-visible:
+153 asserts across 24 VIs, all tagged. Case IDs exercised: T-001, T-002, T-003,
+T-004, T-005, T-007, T-008, T-009, T-010, T-012, T-014, T-015, T-016, T-017, T-018,
+T-020, T-022, T-023, T-024, T-025, T-026, T-027, T-029, T-030, T-032, T-035, T-036,
+T-037, T-038, T-040, T-041, T-043, T-045, T-056, T-057, T-058, T-060, T-061.
+The pure-VI tier is complete (T-059 is an inspection item recorded in
+`docs/Path-Derivation-Audit.md`). Integration filtering cluster in progress. Still
+`planned` in Test-Strategy §4:
 
-- **T-001 (CSV column order)** is `planned` — no current assert checks CSV field
-  order.
-- **T-013 (Mirror mode)** is `planned` — nothing yet asserts accept-all mirror
-  mode above threshold.
+- **T-011 (Global coarse gate)**, **T-013 (Mirror mode)**, **T-019 (Explicit
+  tag)**, **T-031 (Register at runtime)**, **T-033 (Fault isolation)** — the rest
+  of the delivery & filtering cluster.
+- File mechanics, backpressure, and lifecycle clusters remain.
+- **T-021** (ConfigReader backlog) and **T-028** (resolve-once) remain parked.

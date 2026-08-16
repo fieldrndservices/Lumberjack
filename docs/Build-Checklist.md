@@ -221,19 +221,49 @@ concretes exist, before the manager or facade.*
       members. Keep `Base+99` within the 5000-9999 user range for any chosen
       base.
 
-      Fault-raising mechanism (design): route every fault through one chokepoint
-      helper instead of hard-coding absolute codes. The helper takes an
-      error-code enum member (or offset) plus a context string, adds
-      `LumberjackErrorBase`, looks up the registered message, and raises. Call
-      sites reference the fault by name (no magic numbers); the enum plus its
-      messages are the single source of truth and generate the error-text file.
-      Keep the code explicit (from the enum), NOT derived from the owning VI's
-      identity, one VI can raise several codes (OpenSink raises 5026 in two
-      branches; ValidateAppenderConfigDTO raises 5022/5024/5025). Use the
-      owning-VI context only for the error `source` field (auto-captured caller VI
-      name). The reconciled `docs/Error-Codes.md` registry is the spec; once the
-      helper exists, refactor the existing inline sites (5000, 5010-5012, 5020-5025,
-      5026, 5027-5029) to call it.
+      Fault-raising mechanism (revised strategy): two layers over a configurable
+      base, so the format is identical everywhere and the block can be relocated.
+
+      - **One chokepoint helper** owns the *format*: it takes an offset, a context
+        string, and a level (Error/Warning), reads `LumberjackErrorBase` from the
+        Store (falling back to 5000 when unset), computes `code = Base + offset`,
+        builds `source` as `Lumberjack: <message>` with `<<context>>` substituted,
+        sets `status` by level (Error = TRUE, Warning = FALSE), and merges with
+        `error in`. Sole owner of the prefix, the `<<context>>` substitution, and
+        the base.
+      - **One VI per code** owns the *content*: named by meaning (not the number),
+        it hard-codes its offset, level, and message template and calls the helper.
+        Call sites raise a fault by calling its code VI, base-agnostic (offset
+        only), so a base relocation changes nothing at the call sites or code VIs.
+        One VI still raises one code; a caller that needs several (e.g. a validator
+        raising 5022/5024/5025) calls several code VIs.
+      - **Configurable global offset:** `LumberjackErrorBase` is a host input applied
+        at `Initialize` and stored in the Store as the *first* step (before any
+        fault-generating step), then read by the helper at runtime, relocating the
+        block is a launch input, no recompile. The 5000 fallback covers early faults
+        and the pure-VI unit tests that never launch the manager.
+
+      Development sub-checklist:
+
+      - [ ] 33a. Chokepoint helper (offset + context + level + `error in` ->
+            `error out`; Base from Store with 5000 fallback; `Lumberjack:` prefix;
+            `<<context>>` substitution; status by level).
+      - [ ] 33b. Store `LumberjackErrorBase` at the top of `Initialize` (host input,
+            default 5000).
+      - [ ] 33c. One VI per code, each with its offset/level/message, calling the
+            helper. **Message content for each code is in `docs/Error-Codes.md` §5,
+            review it there.**
+      - [ ] 33d. Route every existing raise site through its code VI and remove the
+            hand-built error constants (this is the Error-Codes §6 sweep): 5000,
+            5010-5012, 5014, 5020-5026, 5027-5029, 5030, 5032.
+      - [ ] 33e. Generate/sync `errors/Lumberjack-errors.txt` from the code VIs so
+            General Error Handler shows the static description.
+      - [ ] 33f. Tests: existing fault-code asserts assume the default base (5000);
+            add a base-relocation test (set base 6000 -> a fault returns
+            `6000 + offset`).
+
+      Offsets and raise sites are the reconciled `docs/Error-Codes.md` registry;
+      message content is §5; the routing sweep is §6.
 
 ---
 

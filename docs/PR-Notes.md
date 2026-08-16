@@ -151,6 +151,40 @@ Documentation:
   dash pattern; the timezone frame is an appender property (`useUTC`), not
   something to reverse-engineer from the rendered name, so the timekey is treated
   as an opaque sortable token.
+- **`IsFileNameSafe` special-character detection wired backwards (fix):** the
+  Case selector on `Match Regular Expression`'s "offset past match" output used
+  cases `0` / `1..Default`, but that output is `-1` when no special character is
+  found (safe) and `>= 1` on a match (unsafe), and is never `0` (it is the index
+  past a non-empty match). So the no-match (safe) and match (unsafe) inputs both
+  fell into the same branch and the safe/unsafe verdict stopped tracking the input,
+  filesystem-safety checking for `baseName`/`extension` was effectively disabled,
+  so 5020 did not reliably fire. Rewired the selector to `-1` (no special
+  character, safe) vs `Default` (match found, unsafe). Found during Config-validate
+  test prep; `LMBR-T-024-c`/`-024-d` regression-cover it once built.
+- **`DropPolicyFromString` always returned `DropOldest` (fix):** the lookup found
+  the correct index into the enum's `Strings[]` array, but the index-to-enum
+  conversion never set the enum value, so every input resolved to the ordinal-0
+  member (`DropOldest`) regardless of the name. Effect: a config specifying
+  `DropNewest` or the level-aware policy was silently coerced to `DropOldest`, so
+  the per-appender backpressure policy from configuration did not take effect
+  (SRS-LMBR-057), the wrong statements get discarded under a saturated bounded
+  queue. Root cause: `Type Cast` is a byte-width reinterpret and `DropPolicy` is
+  U16, while `Search 1D Array` returns I32; casting the 4-byte int into the 2-byte
+  enum misreads the bytes and lands on ordinal 0. Fixed by converting the index
+  I32 -> U16 (the enum's representation) before `Type Cast` to `DropPolicy`. `FilterModeFromString` had the identical I32-vs-U16 bug and was fixed the same way.
+  Found by inspection; there is no DropPolicy/FilterMode name-round-trip test yet
+  (only Severity has one, T-008), so both were unguarded, a round-trip test
+  (`LMBR-T-060`) is being added to close that.
+- **Resolve fataled on a missing config file (SRS-047 fix):** with a defined but
+  non-existent config path, `Resolve` let LabVIEW error 7 (file not found) escape
+  as a fatal error (`status` TRUE), which would block launch. The path gate lacked
+  a working validity check, most LabVIEW existence primitives throw error 7 on a
+  missing path instead of returning a clean FALSE, so the check itself produced the
+  fatal. Added an error-tolerant is-valid-path check so a defined-but-missing path
+  now returns a non-fatal warning (`status` FALSE) and falls back to the launch
+  inputs, per SRS-LMBR-047 ("a missing optional config file shall not block
+  application start"). Present-but-invalid stays fatal (SRS-048). Caught by
+  `Config - resolve` test `LMBR-T-022-a`.
 - **`enableDefaultFile` validation gating** (5024 fix): `ValidateLumberjackConfigDTO`
   now gates the default-file validator chain on `enableDefaultFile`, so a disabled
   default file is neither resolved nor validated. Corrects the earlier silent
@@ -161,6 +195,17 @@ Documentation:
   default log file before the run when its **path input is empty**; a non-empty
   path input suppresses the delete. This clears a stale default file so the suite
   starts clean and runs are repeatable, and a missing file is a no-op.
+- **Relay appender threshold not exposed on the creation surface (SRS-009 gap,
+  fixed):** the per-appender level `threshold` is a common field populated by
+  `Appender.InitCommon` from `AppenderConfig`, and `CreateFileAppender` surfaces
+  it, but the relay's registration surface did not, so a relay could only ever run
+  at its default cutoff. Receipt-time filtering itself worked; the value was just
+  unreachable, so SRS-LMBR-009 ("each appender shall have its own independently
+  configurable level threshold") was not fully met for relays. Added an optional
+  `threshold` (`Severity`, default `ALL`) input that bundles into the
+  `AppenderConfig` fed to `InitCommon`; default `ALL` preserves the behavior of
+  relays created before the input existed (T-030/032/045 unaffected). Caught by the
+  new `Filtering - per-appender threshold` test `LMBR-T-012` (SRS-009).
 
 ---
 
@@ -206,7 +251,12 @@ than the binary diff.
   the fix list to clear before submitting.
 - **ConfigReader design (Design §4.5):** started, not finished; to be completed in
   this PR before review. Design write-up only, the implementation (F1-F4) stays
-  post-1.0 backlog.
+  post-1.0 backlog. Consequently **per-key / partial-file merge (SRS-LMBR-046) is
+  not yet implemented**: the current `Merge` does a full-object overwrite (an empty
+  value clobbers the baseline rather than falling back). Its presence mask
+  (two-default diff) and the `LMBR-T-021` per-key-merge test are deferred with the
+  ConfigReader work; `Config - resolve.vi` covers only the no-file / missing /
+  invalid paths (T-020/022/023) for now.
 - **`Support.lvlib` extraction:** Build-Checklist item 28a, a separate structural
   refactor to do before the project is considered done, not in this PR.
 - **Optional additional unit tests:** CSV column order, tag `Sanitize`.

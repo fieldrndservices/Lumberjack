@@ -709,6 +709,14 @@ inputs (SRS-LMBR-039, 044); a relative or empty root is resolved against this
 host root. `ResolveHostRoot` is the only VI permitted to compute an external
 base path, and it never calls `Current VI's Path`.
 
+For testability, `ResolveHostRoot` exposes an injectable `app kind` input
+(typedef enum `HostAppKind` {`Auto`, `DevelopmentSystem`, `RunTimeSystem`},
+default `Auto`). `Auto` reads the real `Application.Kind`, so production callers
+are unaffected; a unit test wires `RunTimeSystem` to force the built-app branch
+and confirm the 5000 fault from the IDE (LMBR-T-058). This overrides only
+environment detection, not any path input, so SRS-LMBR-064 (external-path
+computation isolated in one VI) still holds. (SOP-117 draft.)
+
 ---
 
 ## 7. Threading and Determinism

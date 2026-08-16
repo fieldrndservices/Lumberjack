@@ -176,7 +176,7 @@ archived today still resolves against a future revision of this table.
 
 | Test ID | Case | Assertion | Tier | SRS | Implementing VI |
 |---|---|---|---|---|---|
-| LMBR-T-001 | CSV column order | fields emit as timestamp, level, sourceTag, originVI, message | U | 010, 012 | planned |
+| LMBR-T-001 | CSV column order | fields emit as timestamp, level, sourceTag, originVI, message | U | 010, 012 | tests/Unit/Layout - CSV quoting.vi |
 | LMBR-T-002 | CSV quote escaping | a message with quotes/delimiter/newline is RFC 4180 quoted | U | 012 | tests/Unit/Layout - CSV quoting.vi |
 | LMBR-T-003 | CSV custom delimiter | tab delimiter applied; comma not quoted under tab (Logger parity) | U | 012 | tests/Unit/Layout - CSV quoting.vi |
 | LMBR-T-004 | ISO 8601 timestamp | timestamp field matches ISO 8601 | U | 011 | tests/Unit/Layout - ISO 8601 timestamp.vi |
@@ -192,7 +192,7 @@ archived today still resolves against a future revision of this table.
 | LMBR-T-009 | Threshold 0 | disables all logging | U | 006 | tests/Unit/Severity - rank compare.vi |
 | LMBR-T-010 | Threshold 7+ | passes all levels | U | 006 | tests/Unit/Severity - rank compare.vi |
 | LMBR-T-011 | Global coarse gate | statement above global threshold is not fanned out | U/I | 007, 012 | planned |
-| LMBR-T-012 | Per-appender threshold | appender writes only statements passing its own threshold | I | 009 | planned |
+| LMBR-T-012 | Per-appender threshold | appender writes only statements passing its own threshold | I | 009 | tests/Integration/Filtering - per-appender threshold.vi |
 | LMBR-T-013 | Mirror mode | accepts everything above threshold | U | 026 | planned |
 | LMBR-T-014 | Routed level range | accepts only within the inclusive rank band [levelMin, levelMax] (log4j LevelRangeFilter semantics: levelMin most severe, levelMax least severe) | U | 026 | tests/Unit/Filter - level range.vi |
 | LMBR-T-015 | Routed single level | levelMin == levelMax accepts exactly that one level | U | 026 | tests/Unit/Filter - level range.vi |
@@ -210,15 +210,17 @@ archived today still resolves against a future revision of this table.
 
 | Test ID | Case | Assertion | Tier | SRS | Implementing VI |
 |---|---|---|---|---|---|
-| LMBR-T-020 | Input baseline | launch inputs produce the effective config with no file | U | 044 | planned |
+| LMBR-T-020 | Input baseline | launch inputs produce the effective config with no file | U | 044 | tests/Unit/Config - resolve.vi |
 | LMBR-T-021 | JSON per-key merge | file overrides only the keys it sets; absent keys fall back | U | 046 | planned |
-| LMBR-T-022 | Missing file | defined path, missing file, returns non-fatal warning, continues | U | 047 | planned |
-| LMBR-T-023 | Invalid file | present but unparseable/invalid fails launch with a descriptive error | U | 048 | planned |
-| LMBR-T-024 | Field validation | out-of-range threshold, bad enum, negative size each named in the error | U | 048 | planned |
-| LMBR-T-025 | Enum name membership | unknown Severity/DropPolicy/FilterMode name is rejected with the accepted set listed | U | 048 | tests/Unit/Severity - name round trip.vi |
-| LMBR-T-026 | Bounded values | maxFileSize/maxFileCount/queueBound accept -1 (unbounded) and positive; reject 0 and < -1 | U | 033, 034, 056 | planned |
-| LMBR-T-027 | Schema version | schemaVersion accepted by set membership; a non-member is rejected | U | 048 | planned |
+| LMBR-T-022 | Missing file | defined path, missing file, returns non-fatal warning, continues | U | 047 | tests/Unit/Config - resolve.vi |
+| LMBR-T-023 | Invalid file | present but unparseable/invalid fails launch with a descriptive error | U | 048 | tests/Unit/Config - resolve.vi |
+| LMBR-T-024 | Field validation | out-of-range threshold, bad enum, negative size each named in the error | U | 048 | tests/Unit/Config - validate.vi |
+| LMBR-T-025 | Enum name membership | unknown Severity/DropPolicy/FilterMode name is rejected with the accepted set listed | U | 048 | tests/Unit/Severity - name round trip.vi; tests/Unit/Enum - DropPolicy and FilterMode.vi |
+| LMBR-T-026 | Bounded values | maxFileSize/maxFileCount/queueBound accept -1 (unbounded) and positive; reject 0 and < -1 | U | 033, 034, 056 | tests/Unit/Config - validate.vi |
+| LMBR-T-027 | Schema version | schemaVersion accepted by set membership; a non-member is rejected | U | 048 | tests/Unit/Config - validate.vi |
 | LMBR-T-028 | Resolve once | effective config computed once at launch | U/I | 051 | planned |
+| LMBR-T-060 | Enum name conversion | DropPolicy/FilterMode member name maps to the correct typed value (round-trip) | U | 050a | tests/Unit/Enum - DropPolicy and FilterMode.vi |
+| LMBR-T-061 | DTO<->native round-trip | each config DTO<->native mapper pair round-trips a distinctive value with no field lost | U | 050a | tests/Unit/Config - DTO round trip.vi |
 
 ### 4.5 Appenders and broadcast
 
@@ -238,7 +240,7 @@ archived today still resolves against a future revision of this table.
 | LMBR-T-035 | ISO filename | each file name embeds an ISO 8601 timestamp (colons removed) | U/I | 035 | tests/Unit/ISO 8601 filename.vi |
 | LMBR-T-036 | Base name prefix | non-empty baseName yields `baseName_<timestamp>.<ext>`; empty yields timestamp-only | U | 035 | tests/Unit/ISO 8601 filename.vi |
 | LMBR-T-037 | Extension normalize | "csv" and ".csv" both yield one dot; empty extension yields no trailing dot | U | 035 | tests/Unit/ISO 8601 filename.vi |
-| LMBR-T-038 | UTC frame agreement | within one appender, useUTC frames its file name, calendar folder, and layout line timestamp identically; appenders may differ (e.g. local console + UTC file) | U | 011, 035, 036 | planned |
+| LMBR-T-038 | UTC frame agreement | within one appender, useUTC frames its file name, calendar folder, and layout line timestamp identically; appenders may differ (e.g. local console + UTC file) | U | 011, 035, 036 | tests/Unit/Layout - UTC frame agreement.vi |
 | LMBR-T-039 | Rollover on size | exceeding max size opens a new file | I | 033 | planned |
 | LMBR-T-040 | Retention prune | files beyond max count are pruned oldest-first; -1 keeps all | U/I | 034 | tests/Unit/Retention prune.vi |
 | LMBR-T-041 | Per-series prune | files with different base names in one folder are pruned independently, not against each other | U | 034 | tests/Unit/Retention prune.vi |
@@ -276,10 +278,10 @@ archived today still resolves against a future revision of this table.
 
 | Test ID | Case | Assertion | Tier | SRS | Implementing VI |
 |---|---|---|---|---|---|
-| LMBR-T-056 | Explicit root honored | a supplied root folder is used verbatim | U | 039, 064 | planned |
-| LMBR-T-057 | Host-context default | empty root resolves against host app context, not the library path | U | 064 | planned |
-| LMBR-T-058 | Built-app requires path | with no host path and Application.Kind = Run Time System, resolution faults with error 5000 | U | 064 | planned |
-| LMBR-T-059 | No self-derived paths | no library VI derives an external path from its own VI path | U (inspection) | 064 | planned |
+| LMBR-T-056 | Explicit root honored | a supplied root folder is used verbatim | U | 039, 064 | tests/Unit/Path - ResolveHostRoot.vi |
+| LMBR-T-057 | Host-context default | empty root resolves against host app context, not the library path | U | 064 | tests/Unit/Path - ResolveHostRoot.vi |
+| LMBR-T-058 | Built-app requires path | with no host path and Application.Kind = Run Time System, resolution faults with error 5000 (via injectable app kind seam); resolved root is Not A Path | U | 064 | tests/Unit/Path - ResolveHostRoot.vi |
+| LMBR-T-059 | No self-derived paths | no library VI derives an external path from its own VI path | U (inspection) | 064 | docs/Path-Derivation-Audit.md |
 
 ---
 
