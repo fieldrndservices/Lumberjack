@@ -206,6 +206,38 @@ Documentation:
   `AppenderConfig` fed to `InitCommon`; default `ALL` preserves the behavior of
   relays created before the input existed (T-030/032/045 unaffected). Caught by the
   new `Filtering - per-appender threshold` test `LMBR-T-012` (SRS-009).
+- **Shutdown was not a true flush barrier (SRS-002/004, fixed):** two root causes,
+  both surfaced by the first file test `LMBR-T-034`. File appenders buffer to disk
+  and commit at `CloseSink`, so an early `Shutdown` return produced 0-byte files at
+  full speed while highlight execution masked it, and across the serial suite each
+  test handed a not-fully-stopped tree to the next.
+  1. The shutdown timeout constant defaulted to **-1**, which collapsed the
+     `deadline = start + timeout` math to an already-expired deadline, so
+     `WaitForStopped` skipped the wait entirely. Fixed: positive default (5000 ms).
+  2. `LogManager.Actor Core` posted `stoppedNotifier` immediately after the AF
+     Call Parent node. Launch Nested Actor auto-stops the appenders when the manager
+     stops, but the parent's Actor Core does **not** block until the children finish
+     stopping, so the notifier fired before the appenders ran `CloseSink`. Fixed:
+     after Call Parent, poll `Read Auto-stop Nested Actor Count` to 0 (5 ms interval;
+     unbounded, with the caller's `Shutdown` timeout as the backstop), then post
+     `stoppedNotifier`. Because each appender's `CloseSink` runs before it drops out
+     of the count, count==0 means every sink has flushed and closed. `Shutdown` is
+     now a real barrier; single-test and serial-suite both pass.
+  Also confirmed `CloseSink` guards the close with `Not A Refnum?` (safe no-op on the
+  error-exit path).
+- **T-034 file-config defects (found building the first file test):**
+  - Default `FileAppenderConfig` carried invalid `maxFileSize`/`maxFileCount` (`0`),
+    which gated the write path and produced 0-byte files. Tests must set `-1`/`-1`.
+    Follow-ups: verify the size-rollover check special-cases `-1` as unbounded (not
+    `size >= -1`, which rolls every write), and note the native-config `Register File
+    Appender` path bypasses the DTO 5022 validation that would reject bad bounds.
+  - A raw default `FileAppenderConfig` carries a **base `Layout`**, not a
+    `CSVLayout`, so `Format` (DD must-override) emitted empty lines. The test must
+    supply a `CSVLayout`; `Register File Appender` should default it, mirroring
+    `CreateFileAppender`.
+  - SRS-037: `FileAppender.Init` stamps `useUTC` but not the delimiter, so a
+    configured non-comma delimiter never reaches the layout (masked by the comma
+    default). Stamp `file.delimiter` via the `CSVLayout:Write delimiter` accessor.
 
 ---
 
@@ -246,6 +278,12 @@ than the binary diff.
   and named relay queues); unit tests run parallel. Remaining launched-actor tests:
   file mechanics (two files, rollover, calendar tree), fault isolation, per-appender
   threshold, shutdown flush / shutdown-on-error, CatchError.
+- **Shutdown drain latency (next-pass optimization):** now that `Shutdown` correctly
+  waits for every nested appender to stop and flush (the count-poll fix), the serial
+  suite runs noticeably longer, which suggests some appenders are slow to stop. The
+  poll interval is already 5 ms, so the latency is in the appenders' own stop path
+  (likely a blocking wait in the intake/backpressure loop before the stop is
+  handled). Deferred to a later pass; correctness is not affected.
 - **5030 masks a failed default-file appender startup (diagnosability gap):** when
   `enableDefaultFile = TRUE` but the default FileAppender cannot open its sink (no
   writable root / host path resolved), the failure surfaces as a generic 5030

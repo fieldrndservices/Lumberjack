@@ -231,7 +231,7 @@ archived today still resolves against a future revision of this table.
 | LMBR-T-031 | Register at runtime | a newly registered appender begins receiving | I | 020, 028 | tests/Integration/Registry - register at runtime.vi |
 | LMBR-T-032 | Unregister at runtime | an unregistered appender stops receiving and flushes | I | 020 | tests/Integration/Registry - unregister silences appender.vi |
 | LMBR-T-033 | Fault isolation | a stopped/faulted appender does not block delivery to others | I | 021 | tests/Integration/Fault Isolation - stopped appender.vi |
-| LMBR-T-034 | Two files, distinct roots | mirror file and errors-only file receive the correct subsets | I | 032, 039, 040 | planned |
+| LMBR-T-034 | Two files, distinct roots | mirror file and errors-only file receive the correct subsets | I | 032, 039, 040 | tests/Integration/File - two files distinct roots.vi |
 
 ### 4.6 File mechanics
 

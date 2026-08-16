@@ -359,7 +359,28 @@ pending); not a Caraya assert.
 
 ## Integration tier
 
-### tests/Integration/Fault Isolation - stopped appender.vi  (T-033 -> SRS-021)  — BUILT
+### tests/Integration/File - two files distinct roots.vi  (T-034 -> SRS-032/039/040)  — BUILT
+
+VI Documentation line: `Implements LMBR-T-034 -> SRS-032, SRS-039, SRS-040. Assert-level IDs: Test-ID-Assert-Checklist.md.`
+
+- [x] `LMBR-T-034-a rootA produced exactly one log file`
+- [x] `LMBR-T-034-b rootB produced exactly one log file`
+- [x] `LMBR-T-034-c rootA file contains "line-info" (FA-A threshold ALL)`
+- [x] `LMBR-T-034-d rootB file does not contain "line-info" (FA-B threshold WARN; no cross-contamination)`
+- [x] `LMBR-T-034-e rootB file contains "line-warn"`
+
+Note: first file-mechanics test; file fixture not relay probes. Two `Setup - create
+temp root` -> rootA, rootB. `enableDefaultFile = FALSE`, `global threshold = ALL`.
+Two `Register File Appender` from default FileAppenderConfig: FA-A (id fileA, root
+rootA, threshold ALL, filter.mode Mirror, calendarFolderTree FALSE); FA-B (id
+fileB, root rootB, threshold WARN, filter.mode Mirror, calendarFolderTree FALSE).
+Set `maxFileSize = -1` and `maxFileCount = -1` on both (unbounded / keep-all) so
+rollover is out of the picture; bad bounds (0) make the write path gate every write
+and produce a 0-byte file (the native-config Register path bypasses 5022
+validation). Match `List Log Files` extension to the config extension `"csv"` (no
+dot). Log INFO `"line-info"` then WARN `"line-warn"`. MUST `Close test manager` (Shutdown flush/close) BEFORE `List Log
+Files`/`Read Log Lines`. `-034-c`+`-034-d` are the root-isolation + independent-
+threshold pair (INFO in A, absent from B). Two `Tear Down - delete root temp`.
 
 VI Documentation line: `Implements LMBR-T-033 -> SRS-021. Assert-level IDs: Test-ID-Assert-Checklist.md.`
 
@@ -528,17 +549,17 @@ VI Documentation line: `Implements LMBR-T-045 -> SRS-023, SRS-026. Assert-level 
 
 ## Coverage note
 
-170 asserts across 29 VIs, all tagged. Case IDs exercised: T-001, T-002, T-003,
+175 asserts across 30 VIs, all tagged. Case IDs exercised: T-001, T-002, T-003,
 T-004, T-005, T-007, T-008, T-009, T-010, T-011, T-012, T-013, T-014, T-015, T-016,
 T-017, T-018, T-019, T-020, T-022, T-023, T-024, T-025, T-026, T-027, T-029, T-030,
-T-031, T-032, T-033, T-035, T-036, T-037, T-038, T-040, T-041, T-043, T-045, T-056,
-T-057, T-058, T-060, T-061.
+T-031, T-032, T-033, T-034, T-035, T-036, T-037, T-038, T-040, T-041, T-043, T-045,
+T-056, T-057, T-058, T-060, T-061.
 The pure-VI tier is complete (T-059 is an inspection item recorded in
 `docs/Path-Derivation-Audit.md`). Delivery & filtering cluster complete
-(T-011/012/013/019/031/033). Remaining clusters, all `planned` in Test-Strategy §4:
+(T-011/012/013/019/031/033). File mechanics started (T-034 done, first file test).
+Remaining clusters, `planned` in Test-Strategy §4:
 
-- **File mechanics:** T-006, T-034, T-039, T-042 (needs the temp-root fixture and
-  enables the default file).
+- **File mechanics:** T-006, T-039, T-042 (temp-root fixture, file readback).
 - **Backpressure:** T-044, T-046-T-051.
 - **Lifecycle:** T-052-T-055.
 - Parked: T-021 (ConfigReader backlog), T-028 (resolve-once).

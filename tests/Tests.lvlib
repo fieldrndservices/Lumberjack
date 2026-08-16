@@ -13,6 +13,7 @@
 	</Item>
 	<Item Name="Support" Type="Folder">
 		<Property Name="NI.LibItem.Scope" Type="Int">2</Property>
+		<Property Name="NI.SortType" Type="Int">0</Property>
 		<Item Name="Close test manager.vi" Type="VI" URL="../Support/Close test manager.vi"/>
 		<Item Name="Launch Consumer Relay.vi" Type="VI" URL="../Support/Launch Consumer Relay.vi"/>
 		<Item Name="List Log Files.vi" Type="VI" URL="../Support/List Log Files.vi"/>
@@ -22,14 +23,16 @@
 		<Item Name="Register Relay Appender.vi" Type="VI" URL="../Support/Register Relay Appender.vi"/>
 		<Item Name="Release Relay Queues.vi" Type="VI" URL="../Support/Release Relay Queues.vi"/>
 		<Item Name="Setup - create temp root.vi" Type="VI" URL="../Support/Setup - create temp root.vi"/>
+		<Item Name="Stop Appender by ID.vi" Type="VI" URL="../Support/Stop Appender by ID.vi"/>
 		<Item Name="Tear Down - delete root temp.vi" Type="VI" URL="../Support/Tear Down - delete root temp.vi"/>
 		<Item Name="Unit Test Template.vi" Type="VI" URL="../Unit/Unit Test Template.vi"/>
-		<Item Name="Stop Appender by ID.vi" Type="VI" URL="../Support/Stop Appender by ID.vi"/>
 	</Item>
 	<Item Name="Integration" Type="Folder">
 		<Property Name="NI.SortType" Type="Int">0</Property>
 		<Item Name="Delivery - broadcast.vi" Type="VI" URL="../Integration/Delivery - broadcast.vi"/>
 		<Item Name="Delivery - single appender.vi" Type="VI" URL="../Integration/Delivery - single appender.vi"/>
+		<Item Name="Fault Isolation - stopped appender.vi" Type="VI" URL="../Integration/Fault Isolation - stopped appender.vi"/>
+		<Item Name="File - two files distinct roots.vi" Type="VI" URL="../Integration/File - two files distinct roots.vi"/>
 		<Item Name="Filtering - global gate.vi" Type="VI" URL="../Integration/Filtering - global gate.vi"/>
 		<Item Name="Filtering - mirror mode.vi" Type="VI" URL="../Integration/Filtering - mirror mode.vi"/>
 		<Item Name="Filtering - per-appender threshold.vi" Type="VI" URL="../Integration/Filtering - per-appender threshold.vi"/>
