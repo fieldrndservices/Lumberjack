@@ -312,6 +312,15 @@ than the binary diff.
   and named relay queues); unit tests run parallel. Remaining launched-actor tests:
   file mechanics (two files, rollover, calendar tree), fault isolation, per-appender
   threshold, shutdown flush / shutdown-on-error, CatchError.
+- **Sub-second rollover collision-proofing (future enhancement):** rolled file names
+  use second-resolution ISO8601 timestamps opened create-only, so two size rollovers
+  within one second collide and fault by design (Design 5.5). Fine for MB-scale files,
+  but it makes rollover fragile to test and would fault a genuine high-throughput
+  small-file logger. Enhancement: add a sequence/index disambiguator to rolled file
+  names (e.g. `<base>_<timestamp>_0001`) so same-second rollovers never collide; update
+  Design 5.5 / SRS-035, and it supersedes the current fault-on-same-second choice. Would
+  let `LMBR-T-039` revert from the spaced (2 s-waits) design to a simple fast test. For
+  now T-039 is hardened to roll across second boundaries instead.
 - **Shutdown drain latency (next-pass optimization):** now that `Shutdown` correctly
   waits for every nested appender to stop and flush (the count-poll fix), the serial
   suite runs noticeably longer, which suggests some appenders are slow to stop. The

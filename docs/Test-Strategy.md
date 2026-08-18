@@ -241,7 +241,7 @@ archived today still resolves against a future revision of this table.
 | LMBR-T-036 | Base name prefix | non-empty baseName yields `baseName_<timestamp>.<ext>`; empty yields timestamp-only | U | 035 | tests/Unit/ISO 8601 filename.vi |
 | LMBR-T-037 | Extension normalize | "csv" and ".csv" both yield one dot; empty extension yields no trailing dot | U | 035 | tests/Unit/ISO 8601 filename.vi |
 | LMBR-T-038 | UTC frame agreement | within one appender, useUTC frames its file name, calendar folder, and layout line timestamp identically; appenders may differ (e.g. local console + UTC file) | U | 011, 035, 036 | tests/Unit/Layout - UTC frame agreement.vi |
-| LMBR-T-039 | Rollover on size | exceeding max size opens a new file | I | 033 | planned |
+| LMBR-T-039 | Rollover on size | exceeding max size opens a new file | I | 033 | tests/Integration/File - size rollover.vi |
 | LMBR-T-040 | Retention prune | files beyond max count are pruned oldest-first; -1 keeps all | U/I | 034 | tests/Unit/Retention prune.vi |
 | LMBR-T-041 | Per-series prune | files with different base names in one folder are pruned independently, not against each other | U | 034 | tests/Unit/Retention prune.vi |
 | LMBR-T-042 | Calendar tree | files placed in dated sub-folders when enabled | I | 036 | planned |

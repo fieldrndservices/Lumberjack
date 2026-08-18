@@ -359,22 +359,36 @@ pending); not a Caraya assert.
 
 ## Integration tier
 
-### tests/Integration/File - size rollover.vi  (T-039 -> SRS-033)  — PENDING BUILD
+### tests/Integration/File - size rollover.vi  (T-039 -> SRS-033)  — BUILT
 
 VI Documentation line: `Implements LMBR-T-039 -> SRS-033. Assert-level IDs: Test-ID-Assert-Checklist.md.`
 
-- [ ] `LMBR-T-039-a size rollover produced more than one file`
-- [ ] `LMBR-T-039-b total lines across all files = 20 (no statement lost across rolls)`
-- [ ] `LMBR-T-039-c newest file contains "roll-20"`
+- [x] `LMBR-T-039-a size rollover produced more than one file`
+- [x] `LMBR-T-039-b total lines across all files = 3 (no statement lost across rolls)`
+- [x] `LMBR-T-039-c newest file contains "roll-03"`
 
-Note: copy T-034, one file appender FA (id fileR, root, threshold ALL, mirror,
-CSVLayout, calendarFolderTree FALSE, maxFileCount -1 keep-all, maxFileSize small
-~256B so ~3-5 lines/file). enableDefaultFile FALSE, global ALL. Log 20 INFO
-zero-padded `"roll-01".."roll-20"` (sourceTag ROLL) to force several rolls. Close
-(Shutdown barrier) BEFORE List/Read. `-039-a` count>=2 (rollover fired), `-039-b`
-total rows == 20 (integrity across the roll; catches drop/duplicate-path-on-reopen),
-`-039-c` newest file (paths[last]) has roll-20. Rides the -1-as-unbounded fix
-(T-034 showed -1 -> 1 file). maxFileCount -1 so retention (T-041) doesn't prune.
+NAME FIX PENDING: the built `-039-b` assert is still labeled "= 20" (stale from the
+fast-version design) though it logs/asserts 3; rename it in the VI to "= 3" so the
+report matches. Passes 4/4 individual runs + suite; hardened spaced-rollover design.
+
+Note: SPACED-ROLLOVER design. Rolled file names are second-resolution ISO8601
+timestamps, opened create-only, so two rollovers in the same second collide and fault
+BY DESIGN (Design.md 5.5) -- a small maxFileSize + rapid logging (the old 20-fast-line
+version) rolls sub-second and fails intermittently (passes only under highlight). So
+force one roll per write but SPACE the writes across seconds: one file appender FA (id
+fileR, root, threshold ALL, mirror, CSVLayout, calendarFolderTree FALSE, maxFileCount
+-1, maxFileSize COMFORTABLY above one full line but below two, so roll-1 fits file A
+WITHOUT rolling (no roll in the registration second) and roll-2/roll-3 each roll; pad
+the message to a fixed width or measure a one-line file so the value is deterministic).
+enableDefaultFile FALSE, global ALL. Log `"roll-1"`, Wait 2000 ms, `"roll-2"`, Wait
+2000 ms, `"roll-3"` (sourceTag ROLL) -- the Waits MUST be strictly sequenced between
+the Logs (error/logger wire or flat sequence) so each roll lands in a distinct second;
+2 s margin swamps async/startup jitter. Close (flush fence) BEFORE List/Read. `-039-a`
+count>=2 (loose: tolerates empty-first-file), `-039-b` total rows == 3 (no loss across
+rolls), `-039-c` newest file (paths[last]) has roll-3. Depends on both the flush fence
+and the currentFileSize increment fix. FUTURE ENHANCEMENT (PR-Notes 4): add a filename
+sequence disambiguator so sub-second rollover is collision-proof, which would let this
+revert to the simple fast (no-wait) version.
 
 VI Documentation line: `Implements LMBR-T-034 -> SRS-032, SRS-039, SRS-040. Assert-level IDs: Test-ID-Assert-Checklist.md.`
 
@@ -564,17 +578,17 @@ VI Documentation line: `Implements LMBR-T-045 -> SRS-023, SRS-026. Assert-level 
 
 ## Coverage note
 
-175 asserts across 30 VIs, all tagged. Case IDs exercised: T-001, T-002, T-003,
+178 asserts across 31 VIs, all tagged. Case IDs exercised: T-001, T-002, T-003,
 T-004, T-005, T-007, T-008, T-009, T-010, T-011, T-012, T-013, T-014, T-015, T-016,
 T-017, T-018, T-019, T-020, T-022, T-023, T-024, T-025, T-026, T-027, T-029, T-030,
-T-031, T-032, T-033, T-034, T-035, T-036, T-037, T-038, T-040, T-041, T-043, T-045,
-T-056, T-057, T-058, T-060, T-061.
+T-031, T-032, T-033, T-034, T-035, T-036, T-037, T-038, T-039, T-040, T-041, T-043,
+T-045, T-056, T-057, T-058, T-060, T-061.
 The pure-VI tier is complete (T-059 is an inspection item recorded in
 `docs/Path-Derivation-Audit.md`). Delivery & filtering cluster complete
-(T-011/012/013/019/031/033). File mechanics started (T-034 done, first file test).
+(T-011/012/013/019/031/033). File mechanics in progress (T-034, T-039 done).
 Remaining clusters, `planned` in Test-Strategy §4:
 
-- **File mechanics:** T-006, T-039, T-042 (temp-root fixture, file readback).
+- **File mechanics:** T-006, T-042 (temp-root fixture, file readback).
 - **Backpressure:** T-044, T-046-T-051.
 - **Lifecycle:** T-052-T-055.
 - Parked: T-021 (ConfigReader backlog), T-028 (resolve-once).
