@@ -32,6 +32,7 @@
 		<Item Name="Delivery - broadcast.vi" Type="VI" URL="../Integration/Delivery - broadcast.vi"/>
 		<Item Name="Delivery - single appender.vi" Type="VI" URL="../Integration/Delivery - single appender.vi"/>
 		<Item Name="Fault Isolation - stopped appender.vi" Type="VI" URL="../Integration/Fault Isolation - stopped appender.vi"/>
+		<Item Name="File - size rollover.vi" Type="VI" URL="../Integration/File - size rollover.vi"/>
 		<Item Name="File - two files distinct roots.vi" Type="VI" URL="../Integration/File - two files distinct roots.vi"/>
 		<Item Name="Filtering - global gate.vi" Type="VI" URL="../Integration/Filtering - global gate.vi"/>
 		<Item Name="Filtering - mirror mode.vi" Type="VI" URL="../Integration/Filtering - mirror mode.vi"/>

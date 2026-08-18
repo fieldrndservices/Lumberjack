@@ -42,6 +42,8 @@
 		<Item Name="Messages" Type="Folder">
 			<Item Name="ConfigureAppenderMsg.lvclass" Type="LVClass" URL="../Core/Messages/ConfigureAppenderMsg.lvclass/ConfigureAppenderMsg.lvclass"/>
 			<Item Name="ConfigureMsg.lvclass" Type="LVClass" URL="../Core/Messages/ConfigureMsg.lvclass/ConfigureMsg.lvclass"/>
+			<Item Name="FlushAckMsg.lvclass" Type="LVClass" URL="../FlushAckMsg.lvclass/FlushAckMsg.lvclass"/>
+			<Item Name="FlushAppenderMsg.lvclass" Type="LVClass" URL="../Core/Messages/FlushAppenderMsg.lvclass/FlushAppenderMsg.lvclass"/>
 			<Item Name="LogStatementMsg.lvclass" Type="LVClass" URL="../Core/Messages/LogStatementMsg.lvclass/LogStatementMsg.lvclass"/>
 			<Item Name="RegisterAppenderMsg.lvclass" Type="LVClass" URL="../Core/Messages/RegisterAppenderMsg.lvclass/RegisterAppenderMsg.lvclass"/>
 			<Item Name="SetGlobalThresholdMsg.lvclass" Type="LVClass" URL="../Core/Messages/SetGlobalThresholdMsg.lvclass/SetGlobalThresholdMsg.lvclass"/>

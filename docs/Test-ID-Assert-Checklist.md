@@ -359,7 +359,22 @@ pending); not a Caraya assert.
 
 ## Integration tier
 
-### tests/Integration/File - two files distinct roots.vi  (T-034 -> SRS-032/039/040)  — BUILT
+### tests/Integration/File - size rollover.vi  (T-039 -> SRS-033)  — PENDING BUILD
+
+VI Documentation line: `Implements LMBR-T-039 -> SRS-033. Assert-level IDs: Test-ID-Assert-Checklist.md.`
+
+- [ ] `LMBR-T-039-a size rollover produced more than one file`
+- [ ] `LMBR-T-039-b total lines across all files = 20 (no statement lost across rolls)`
+- [ ] `LMBR-T-039-c newest file contains "roll-20"`
+
+Note: copy T-034, one file appender FA (id fileR, root, threshold ALL, mirror,
+CSVLayout, calendarFolderTree FALSE, maxFileCount -1 keep-all, maxFileSize small
+~256B so ~3-5 lines/file). enableDefaultFile FALSE, global ALL. Log 20 INFO
+zero-padded `"roll-01".."roll-20"` (sourceTag ROLL) to force several rolls. Close
+(Shutdown barrier) BEFORE List/Read. `-039-a` count>=2 (rollover fired), `-039-b`
+total rows == 20 (integrity across the roll; catches drop/duplicate-path-on-reopen),
+`-039-c` newest file (paths[last]) has roll-20. Rides the -1-as-unbounded fix
+(T-034 showed -1 -> 1 file). maxFileCount -1 so retention (T-041) doesn't prune.
 
 VI Documentation line: `Implements LMBR-T-034 -> SRS-032, SRS-039, SRS-040. Assert-level IDs: Test-ID-Assert-Checklist.md.`
 

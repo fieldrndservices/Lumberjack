@@ -214,17 +214,51 @@ Documentation:
   1. The shutdown timeout constant defaulted to **-1**, which collapsed the
      `deadline = start + timeout` math to an already-expired deadline, so
      `WaitForStopped` skipped the wait entirely. Fixed: positive default (5000 ms).
-  2. `LogManager.Actor Core` posted `stoppedNotifier` immediately after the AF
-     Call Parent node. Launch Nested Actor auto-stops the appenders when the manager
-     stops, but the parent's Actor Core does **not** block until the children finish
-     stopping, so the notifier fired before the appenders ran `CloseSink`. Fixed:
-     after Call Parent, poll `Read Auto-stop Nested Actor Count` to 0 (5 ms interval;
-     unbounded, with the caller's `Shutdown` timeout as the backstop), then post
-     `stoppedNotifier`. Because each appender's `CloseSink` runs before it drops out
-     of the count, count==0 means every sink has flushed and closed. `Shutdown` is
-     now a real barrier; single-test and serial-suite both pass.
-  Also confirmed `CloseSink` guards the close with `Not A Refnum?` (safe no-op on the
-  error-exit path).
+  2. The deeper cause (the real one): a log call hands off asynchronously (SRS-052),
+     so statements sit queued in the appenders, and `Shutdown` did not drain those
+     queues before stopping. It sent the manager a raw framework Stop and returned when
+     the manager's Actor Core returned, but the parent's Call Parent does **not** wait
+     for its nested appenders to finish processing/flushing, so `Shutdown` came back
+     while appenders were still writing (a debug trace showed the tell: `write, read,
+     read, write, write`). An interim attempt to poll `Read Auto-stop Nested Actor
+     Count` after Call Parent did **not** work and was removed: post-Call-Parent the
+     actor object is a frozen by-value copy, so the count never changed, the poll hung
+     the manager, and every teardown burned the full timeout to 5032.
+
+  **Real fix -- a shutdown flush fence (SRS-002):**
+  - `Logger.Shutdown` now sends `RequestShutdownMsg` (carrying the manager's own
+    enqueuer) instead of a raw Stop, then waits on `stoppedNotifier` as before.
+  - `LogManager.BeginFlushDrain` seeds `selfEnqueuer`, marks `draining?`, and sends
+    every registered appender a **normal-priority** `FlushAppenderMsg`, which therefore
+    lands behind the statements already queued in each appender's FIFO.
+    `pendingFlushCount` = the number of appenders successfully sent to; a send that
+    errors (a dead/faulted appender, e.g. T-033's out-of-band-stopped `relayB`) is
+    skipped and not counted, so the fence never waits on an ack that cannot come. No
+    live appenders -> stop immediately.
+  - Each appender processes its queued statements, then `FlushAppenderMsg.Do` calls the
+    new DD `FlushSink` (FileAppender: `Flush File` on `currentFileRefnum`;
+    console/relay inherit a base no-op) to commit to disk, then sends `FlushAckMsg` back
+    to the manager.
+  - `LogManager.HandleFlushAck` decrements `pendingFlushCount`; when it reaches 0 it
+    sends the manager its own Normal Stop (via `selfEnqueuer`). The manager then stops
+    and posts `stoppedNotifier`, so `Shutdown` returns only after every statement is
+    flushed and the tree is down.
+  - `CloseSink` was also moved into the appender's `Stop Core` (so it runs before the
+    actor's last-ack) and guarded with `Not A Refnum?`.
+
+  Result: deterministic, caller-speed-independent shutdown; the debug trace is now
+  `write, write, write, read, read`; single test, back-to-back, and serial suite all
+  pass with no 5032. New surface: `RequestShutdownMsg` / `FlushAppenderMsg` /
+  `FlushAckMsg` message classes; `Appender:FlushSink` (+ `FileAppender` override) and
+  `Appender:Stop Core`; `LogManager:BeginFlushDrain` / `HandleFlushAck`; and
+  `selfEnqueuer` / `pendingFlushCount` / `draining?` on the manager.
+- **`currentFileSize` never incremented, so size rollover never fired (SRS-033,
+  fixed):** `FileAppender.Write` wrote each line but did not add the bytes written to
+  `currentFileSize`, so the rollover check (`currentFileSize >= maxFileSize`) always
+  saw 0 and never rolled. Fixed: `Write` now adds the written byte count to
+  `currentFileSize` and writes it back; `OpenNewFile` resets it to 0 for a new file.
+  Confirm the check still special-cases `maxFileSize = -1` as unbounded. Caught by the
+  new size-rollover test `LMBR-T-039`.
 - **T-034 file-config defects (found building the first file test):**
   - Default `FileAppenderConfig` carried invalid `maxFileSize`/`maxFileCount` (`0`),
     which gated the write path and produced 0-byte files. Tests must set `-1`/`-1`.
