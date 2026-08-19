@@ -26,3 +26,9 @@ docs/HTMLReport/*.html
 docs/HTMLReport/images/*.jpg
 tests/Test Results/*
 !tests/Test Results/.gitkeep
+
+# --- Agent + working notes (not controlled project docs, kept out of the DHF) ---
+# Claude working instructions (auto-loaded, not versioned):
+/CLAUDE.md
+# Transient session scaffolding: commit notes, cleanup lists, paste text:
+/.work/
