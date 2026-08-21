@@ -64,14 +64,35 @@ this section is the actionable rule set.
 
 ## 4. Documentation
 
-How VIs, typedefs, and terminals are documented (the description template, the
-Description vs Tip split, and the test-VI assert-naming standard) is owned by
-`Doc-Standards.md`. Two reminders that intersect with naming:
+**Completeness (normative).** A VI is *documented* only when both hold:
+
+1. It has a **VI Documentation string** in its own Documentation field.
+2. **Every non-exempt connector-pane terminal** carries **both** a Description and
+   a Tip.
+
+Exempt terminals, and only these:
+
+- the error cluster (`error in` / `error out` and its `status` / `code` / `source`
+  subfields, LabVIEW boilerplate stands);
+- dynamic-dispatch / class **object** terminals (`<Class> in` / `<Class> out`, or
+  any bare object terminal).
+
+Every other data terminal (scalar, string, path, enum, cluster, array), input or
+output, needs a Description **and** a Tip. Anything short of this is a documentation
+gap, not a style preference.
+
+Two points that intersect with naming:
 
 - Descriptions apply to the item itself (VI, class, typedef). Tips are a
   control/indicator property only; there is no per-VI Tip in LabVIEW.
-- Provide a Description + Tip per connector-pane terminal where it warrants one,
-  most valuable on public, adopter-facing VIs.
+- The Description states what the terminal carries (units, valid set, default); the
+  Tip is a short, distinct hover label.
+
+The presentation template (content shape, the
+`Terminal | Dir | Type | Req | Default | Description | Tip` table, and the test-VI
+assert-naming format) is maintained as a non-normative working aid in
+`.work/Doc-Standards.md`. This section owns the requirement; that file owns the
+formatting.
 
 ---
 
@@ -110,8 +131,9 @@ Current figures: topology, hierarchy, config, hotpath, register, shutdown
 
 ## 6. Companion documents
 
-- `Doc-Standards.md` — VI/terminal documentation template and the test-VI
-  assert-naming standard.
+- `.work/Doc-Standards.md` — non-controlled working aid: the VI/terminal
+  documentation template and test-VI assert-naming format (the normative rule is
+  §4 above).
 - `Design.md` — architecture, the scope-to-path table (§8), and config/enum
   serialization rationale (§4.2).
 - `Error-Codes.md` — error-code registry and message conventions.

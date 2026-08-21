@@ -181,7 +181,7 @@ archived today still resolves against a future revision of this table.
 | LMBR-T-003 | CSV custom delimiter | tab delimiter applied; comma not quoted under tab (Logger parity) | U | 012 | tests/Unit/Layout - CSV quoting.vi |
 | LMBR-T-004 | ISO 8601 timestamp | timestamp field matches ISO 8601 | U | 011 | tests/Unit/Layout - ISO 8601 timestamp.vi |
 | LMBR-T-005 | JSON layout | one valid JSON object per statement, strings correctly escaped | U | 015 | tests/Unit/Layout - JSON Format.vi; tests/Unit/Layout - JSON escape string.vi |
-| LMBR-T-006 | Statement fields | origin VI and source tag are distinct and both present | U | 010, 013 | planned |
+| LMBR-T-006 | Statement fields | origin VI and source tag are distinct and both present | U | 010, 013 | tests/Integration/Statement - fields.vi |
 
 ### 4.2 Severity and filtering
 
@@ -244,23 +244,23 @@ archived today still resolves against a future revision of this table.
 | LMBR-T-039 | Rollover on size | exceeding max size opens a new file | I | 033 | tests/Integration/File - size rollover.vi |
 | LMBR-T-040 | Retention prune | files beyond max count are pruned oldest-first; -1 keeps all | U/I | 034 | tests/Unit/Retention prune.vi |
 | LMBR-T-041 | Per-series prune | files with different base names in one folder are pruned independently, not against each other | U | 034 | tests/Unit/Retention prune.vi |
-| LMBR-T-042 | Calendar tree | files placed in dated sub-folders when enabled | I | 036 | planned |
+| LMBR-T-042 | Calendar tree | files placed in dated sub-folders when enabled | I | 036 | tests/Integration/File - calendar tree.vi |
 
 ### 4.7 Relay appender
 
 | Test ID | Case | Assertion | Tier | SRS | Implementing VI |
 |---|---|---|---|---|---|
 | LMBR-T-043 | Message mode | accepted statements arrive at the consumer enqueuer | I | 024 | tests/Integration/Relay - Message Mode.vi |
-| LMBR-T-044 | Queue mode | accepted statements are dequeueable from the exposed queue | I | 025 | planned |
+| LMBR-T-044 | Queue mode | accepted statements are dequeueable from the exposed queue | I | 025 | tests/Integration/Relay - queue mode.vi |
 | LMBR-T-045 | Filtered tap | a routed/threshold relay receives only its subset | I | 023, 026 | tests/Integration/Relay - filtered tap.vi |
 
 ### 4.8 Backpressure
 
 | Test ID | Case | Assertion | Tier | SRS | Implementing VI |
 |---|---|---|---|---|---|
-| LMBR-T-046 | Unbounded default | no loss with an unbounded queue | U/I | 055 | planned |
-| LMBR-T-047 | Drop-oldest | on a full bound, oldest is discarded, newest admitted | U | 057 | planned |
-| LMBR-T-048 | Drop-newest | on a full bound, newest is discarded | U | 057 | planned |
+| LMBR-T-046 | Unbounded default | no loss with an unbounded queue | U/I | 055 | tests/Integration/Backpressure - unbounded no loss.vi |
+| LMBR-T-047 | Drop-oldest | on a full bound, oldest is discarded, newest admitted | U | 057 | tests/Unit/Backpressure - drop-oldest.vi |
+| LMBR-T-048 | Drop-newest | on a full bound, newest is discarded | U | 057 | tests/Unit/Backpressure - drop-newest.vi |
 | LMBR-T-049 | Level-aware | ERROR/FATAL never discarded; lower severities shed first | U | 057 | planned |
 | LMBR-T-050 | No blocking | enqueue path returns without blocking when full | U | 058 | planned |
 | LMBR-T-051 | Drop notice | discards produce a synthetic "N statements dropped" record | U/I | 059 | planned |

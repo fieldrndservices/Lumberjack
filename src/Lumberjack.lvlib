@@ -55,6 +55,9 @@
 		<Item Name="Logger.lvclass" Type="LVClass" URL="../Public/Logger.lvclass/Logger.lvclass"/>
 	</Item>
 	<Item Name="Support" Type="Folder">
+		<Item Name="Backpressure" Type="Folder">
+			<Item Name="ApplyBackPressure.vi" Type="VI" URL="../Support/Backpressure/ApplyBackPressure.vi"/>
+		</Item>
 		<Item Name="Config" Type="Folder">
 			<Property Name="NI.LibItem.Scope" Type="Int">4</Property>
 			<Item Name="Mapping" Type="Folder">

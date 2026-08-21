@@ -551,6 +551,40 @@ can tap only a subset (for example, ERROR and above) (SRS-LMBR-023).
 - **Drop-oldest default (SRS-LMBR-057):** when a bounded queue is full, the
   oldest queued statement is discarded to admit the newest. Drop-newest and
   level-aware drop (never discard ERROR/FATAL) are selectable per appender.
+  - **Drop-newest** discards the *incoming* statement (the newest), leaving the
+    queue unchanged.
+  - **Level-aware** sheds the least-severe *non-protected* statement (protected =
+    FATAL/ERROR) from the queue-plus-incoming set. Tie-break and edge cases (draft,
+    beyond SRS-057, to fold back into the SRS): the **incoming loses ties** (a
+    statement that merely equals the current least-severe is not worth churning the
+    buffer for, so the newest such arrival is dropped and the queue is left
+    untouched); among equally-least-severe *queued* statements the **oldest** is
+    dropped; and when the set is **all FATAL/ERROR** (nothing sheddable) the
+    **incoming** is dropped (never discard an already-queued critical record;
+    preserve the bound rather than exceed it).
+  - The decision is factored into a pure helper `ApplyDropPolicy` (`pending`,
+    `incoming`, `queueBound`, `dropPolicy`, `worstSeverityIn` -> `result`,
+    `dropped?`, `droppedStatement`, `worstSeverityOut`); `Actor Core`'s intake
+    calls it, stores `result`, carries `worstSeverityOut` back as the next
+    `worstSeverityIn`, and bumps the dropped counter. It stays a pure function of
+    its inputs (deterministic, unit-testable, LMBR-T-047/048/049); the buffer state
+    lives in the caller, not the VI.
+  - **Memoized-floor fast-path (optimization).** `worstSeverityIn` (a `Severity`)
+    is the least-severe statement currently queued (the buffer "floor"), maintained
+    across calls. Because the least-severe-possible item is always a safe eviction,
+    when the queue is full and `incoming` is at or below that floor
+    (`incoming.Severity >= worstSeverityIn`, comparing enum ordinals, which equal
+    rank), the incoming is dropped immediately, with no scan and no O(N) array
+    delete, and the buffer is unchanged. Only a more-severe arrival triggers the
+    scan for the oldest least-severe queued victim. The floor is a **hint**: an
+    empty/unknown value (sentinel `OFF`) forces the scan, which is always correct
+    and recomputes the floor, so correctness never depends on the hint, only the
+    speedup does. This turns the dominant backpressure workload (a flood of
+    low-priority statements into a full buffer) into O(1). An oracle test
+    (LMBR-T-049 equivalence) asserts the fast-path picks the same victim as the
+    brute-force scan. These comparisons ride on the `Severity` enum staying ordered
+    by severity (OFF..ALL); that ordering is already the enum's single source of
+    truth.
 - **No blocking (SRS-LMBR-058):** the enqueue path never blocks the caller; on a
   full bounded queue the drop policy acts immediately. This is what preserves
   SRS-LMBR-052 under saturation.

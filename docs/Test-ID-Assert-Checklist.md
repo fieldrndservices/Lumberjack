@@ -359,7 +359,139 @@ pending); not a Caraya assert.
 
 ## Integration tier
 
-### tests/Integration/File - size rollover.vi  (T-039 -> SRS-033)  — BUILT
+### tests/Integration/Backpressure - unbounded no loss.vi  (T-046 -> SRS-055)  — BUILT
+
+VI Documentation line: `Implements LMBR-T-046 -> SRS-055. Assert-level IDs: Test-ID-Assert-Checklist.md.`
+
+- [x] `LMBR-T-046-a drained count = 100 (unbounded queue lost nothing)`
+- [x] `LMBR-T-046-b first dequeued message = "u-000" (FIFO start)`
+- [x] `LMBR-T-046-c last dequeued message = "u-099" (FIFO end; all present, in order)`
+
+Note: copy T-044. Relay A queue mode, mirror, threshold ALL, queueBound -1 (unbounded).
+enableDefaultFile FALSE, global ALL. For Loop x100 Log INFO `"u-000".."u-099"` (zero-
+padded, sourceTag UNB), sequenced. Drain the exposed queue (loop dequeue w/ timeout,
+count + capture first/last) until empty. `-046-a` count==100 (no loss), `-046-b` first
+== u-000, `-046-c` last == u-099 (FIFO across the burst). Contrast to the bounded drop
+tests (T-047+) where a full queue sheds by policy.
+
+VI Documentation line: `Implements LMBR-T-044 -> SRS-025. Assert-level IDs: Test-ID-Assert-Checklist.md.`
+
+- [x] `LMBR-T-044-a exposed queue 1st dequeue message = "qm-1"`
+- [x] `LMBR-T-044-b exposed queue 2nd dequeue message = "qm-2"`
+- [x] `LMBR-T-044-c exposed queue 3rd dequeue message = "qm-3"`
+- [x] `LMBR-T-044-d exposed queue 4th dequeue times out (held exactly three, FIFO)`
+
+Note: relay A queue mode, mirror, threshold ALL, queueBound -1 (unbounded). enable
+DefaultFile FALSE, global ALL. Log `"qm-1"/"qm-2"/"qm-3"` (sourceTag QM) in order,
+dequeue the exposed queue: a/b/c FIFO delivery, d empty-after (exactly three, no loss).
+Direct SRS-025 test (the queue mode every relay probe uses).
+
+BACKPRESSURE CLUSTER NOTE: drop-policy logic (T-047/048/049, SRS-057) was extracted
+into the pure helper `src/Support/Backpressure/ApplyDropPolicy.vi`
+(`pending`, `incoming`, `queueBound`, `DropPolicy`, `worstSeverityIn` ->
+`result`, `dropped`, `droppedStatement`, `worstSeverityOut`), so these are true U-tier
+unit tests: build inputs, call the VI, assert outputs, no actors and no timing. The
+`LevelAware` member and the memoized-floor fast-path are exercised directly, incl. the
+-049-e oracle (fast-path vs forced scan). T-050 (no-blocking) / T-051 (drop notice)
+still need a controlled integration overflow; approach TBD when we reach them.
+
+### tests/Unit/Backpressure - drop-oldest.vi  (T-047 -> SRS-057)  — BUILT
+
+VI Documentation line: `Implements LMBR-T-047 -> SRS-057. Assert-level IDs: Test-ID-Assert-Checklist.md.`
+
+- [x] `LMBR-T-047-a dropped is TRUE`
+- [x] `LMBR-T-047-b oldest is the dropped one (droppedStatement.message = "A")`
+- [x] `LMBR-T-047-c bound preserved (result size = queueBound)`
+- [x] `LMBR-T-047-d newest admitted at tail (result[2].message = "D")`
+- [x] `LMBR-T-047-e ring shifted, second-oldest now head (result[0].message = "B")`
+- [x] `LMBR-T-047-f room means append, no drop (dropped FALSE)`
+- [x] `LMBR-T-047-g appended at tail (result size = 4, result[3].message = "D")`
+
+Note: `DropPolicy = DropOldest`. Full case: `pending = ["A","B","C"]` (A oldest),
+distinct non-default severities, `queueBound = 3`, `incoming = "D"`, `worstSeverityIn`
+unused (OFF). Room case: same `pending`, `queueBound = 5`. Compare by `message`.
+Room/append test is strict: append iff `queueBound < 0 OR pending size < queueBound`.
+
+### tests/Unit/Backpressure - drop-newest.vi  (T-048 -> SRS-057)  — BUILT
+
+VI Documentation line: `Implements LMBR-T-048 -> SRS-057. Assert-level IDs: Test-ID-Assert-Checklist.md.`
+
+- [x] `LMBR-T-048-a dropped is TRUE`
+- [x] `LMBR-T-048-b incoming is the dropped one (droppedStatement.message = "D")`
+- [x] `LMBR-T-048-c buffer unchanged (result size = queueBound)`
+- [x] `LMBR-T-048-d head preserved (result[0].message = "A")`
+- [x] `LMBR-T-048-e tail preserved (result[2].message = "C")`
+- [x] `LMBR-T-048-f room means append, no drop (dropped FALSE)`
+- [x] `LMBR-T-048-g appended at tail (result size = 4, result[3].message = "D")`
+
+Note: `DropPolicy = DropNewest`. Full case identical setup to T-047; drop-newest
+rejects `incoming`, leaving `pending` intact. Room case appends as usual.
+
+### tests/Unit/Backpressure - level-aware.vi  (T-049 -> SRS-057)  — planned
+
+VI Documentation line: `Implements LMBR-T-049 -> SRS-057. Assert-level IDs: Test-ID-Assert-Checklist.md.`
+
+- [ ] `LMBR-T-049-a scenario A: oldest least-severe queued is the victim (droppedStatement.message = "d1")`
+- [ ] `LMBR-T-049-b scenario A: incoming admitted at tail (result[3].message = "i")`
+- [ ] `LMBR-T-049-c scenario A: bound preserved (Array Size(result) = 4)`
+- [ ] `LMBR-T-049-d scenario A: floor recomputed (worstSeverityOut = DEBUG)`
+- [ ] `LMBR-T-049-e scenario B: incoming at/below floor is dropped (droppedStatement.message = "t")`
+- [ ] `LMBR-T-049-f scenario B: buffer tail unchanged (result[3].message = "d2")`
+- [ ] `LMBR-T-049-g scenario B: buffer size unchanged (Array Size(result) = 4)`
+- [ ] `LMBR-T-049-h scenario C: all-protected, incoming dropped (droppedStatement.message = "f2")`
+- [ ] `LMBR-T-049-i scenario C: protected head intact (result[0].message = "f")`
+- [ ] `LMBR-T-049-j scenario C: buffer size unchanged (Array Size(result) = 3)`
+- [ ] `LMBR-T-049-k scenario D: non-protected is the victim, not the older ERROR (droppedStatement.message = "d")`
+- [ ] `LMBR-T-049-l scenario D: protected ERROR retained (result[0].message = "e")`
+- [ ] `LMBR-T-049-m oracle B: result sequence equal (fast-path = forced scan)`
+- [ ] `LMBR-T-049-n oracle B: droppedStatement.message equal (fast-path = forced scan)`
+- [ ] `LMBR-T-049-o oracle B: worstSeverityOut equal (fast-path = forced scan)`
+- [ ] `LMBR-T-049-p oracle tie: result sequence equal (fast-path = forced scan)`
+- [ ] `LMBR-T-049-q oracle tie: droppedStatement.message equal (fast-path = forced scan)`
+- [ ] `LMBR-T-049-r oracle tie: worstSeverityOut equal (fast-path = forced scan)`
+
+Scenarios (DropPolicy = LevelAware; severity from `Statement.level`; protected =
+`level <= ERROR`; floor = `TRACE`; tie-break: incoming loses ties, Design 5.7):
+A `bufAD=[e:ERROR,d1:DEBUG,w:WARN,d2:DEBUG]` qb4 wSevIn=DEBUG incoming=i:INFO (a-d);
+B same buf, incoming=t:TRACE, fast-path (e-g); C `[f:FATAL,e1:ERROR,e2:ERROR]` qb3
+wSevIn=ERROR incoming=f2:FATAL (h-j); D `[e:ERROR,d:DEBUG]` qb2 wSevIn=DEBUG incoming=w:WARN
+(k,l). Oracle (m-r): each vector is run twice, correct wSevIn vs `OFF`, and the three
+outputs compared field-by-field (one assert each, no combined criteria). m-o = vector B
+(below floor); p-r = tie vector `[td1:DEBUG,tw:WARN,td2:DEBUG]` incoming=td3:DEBUG. The
+oracle is the V&V evidence the fast-path does not change SRS-057 behavior. One claim per
+assert throughout.
+
+VI Documentation line: `Implements LMBR-T-006 -> SRS-010, SRS-013. Assert-level IDs: Test-ID-Assert-Checklist.md.`
+
+- [x] `LMBR-T-006-a delivered sourceTag = "app.comms.tcp" (explicit logical tag)`
+- [x] `LMBR-T-006-b delivered originVI contains this VI's name (physical origin)`
+- [x] `LMBR-T-006-c delivered originVI != sourceTag (distinct fields)`
+
+Note: copy T-019 (single relay probe, explicit tag). enableDefaultFile FALSE, global
+ALL, relay A queue/mirror/ALL. Capture This VI's Path -> name (thisVIName). Log INFO
+`"fields-1"` with explicit sourceTag `"app.comms.tcp"` DIRECTLY on this VI's diagram
+(so originVI = this test VI). Drain relayA, unbundle the Statement: `-006-a` sourceTag
+verbatim, `-006-b` originVI CONTAINS thisVIName (substring, rename-safe, tolerant of
+.vi suffix), `-006-c` originVI != sourceTag (proves they're separate fields, not one).
+Distinct-when-explicit case; default-tag (sourceTag == originVI base name, SRS-013) is
+the unit source-tag test.
+
+VI Documentation line: `Implements LMBR-T-042 -> SRS-036. Assert-level IDs: Test-ID-Assert-Checklist.md.`
+
+- [x] `LMBR-T-042-a log file is placed in a sub-folder of root (calendar folder created)`
+- [x] `LMBR-T-042-b calendar folder date matches the file-name date (YYYYMMDD)`
+- [x] `LMBR-T-042-c file contains "cal-1" (logging works through the calendar path)`
+
+Note: copy T-034, one file appender FA (id fileCal, root, threshold ALL, mirror,
+CSVLayout, calendarFolderTree TRUE, maxFileSize -1 no rollover, maxFileCount -1).
+enableDefaultFile FALSE, global ALL. Log INFO `"cal-1"` (sourceTag CAL). Close (flush
+fence) BEFORE List/Read. `-042-a` Strip Path(file) != root (a dated sub-folder exists;
+contrast T-034/T-039 which used calendarFolderTree FALSE -> file directly in root).
+`-042-b` reduce the sub-path (root+filename stripped) to digits and assert it contains
+the YYYYMMDD extracted from the file NAME's ISO timestamp -- format-agnostic
+(YYYY/MM/DD or YYYY-MM-DD) and midnight-safe (expected derived from the same instant,
+per SRS-036 folder/name agreement). `-042-c` Read Log Lines has "cal-1". Tear Down must
+recursively delete the nested folders. Integration counterpart to unit T-038.
 
 VI Documentation line: `Implements LMBR-T-039 -> SRS-033. Assert-level IDs: Test-ID-Assert-Checklist.md.`
 
@@ -578,17 +710,26 @@ VI Documentation line: `Implements LMBR-T-045 -> SRS-023, SRS-026. Assert-level 
 
 ## Coverage note
 
-178 asserts across 31 VIs, all tagged. Case IDs exercised: T-001, T-002, T-003,
-T-004, T-005, T-007, T-008, T-009, T-010, T-011, T-012, T-013, T-014, T-015, T-016,
-T-017, T-018, T-019, T-020, T-022, T-023, T-024, T-025, T-026, T-027, T-029, T-030,
-T-031, T-032, T-033, T-034, T-035, T-036, T-037, T-038, T-039, T-040, T-041, T-043,
-T-045, T-056, T-057, T-058, T-060, T-061.
+205 asserts across 37 VIs, all tagged. Case IDs exercised: T-001, T-002, T-003,
+T-004, T-005, T-006, T-007, T-008, T-009, T-010, T-011, T-012, T-013, T-014, T-015,
+T-016, T-017, T-018, T-019, T-020, T-022, T-023, T-024, T-025, T-026, T-027, T-029,
+T-030, T-031, T-032, T-033, T-034, T-035, T-036, T-037, T-038, T-039, T-040, T-041,
+T-042, T-043, T-044, T-045, T-046, T-047, T-048, T-056, T-057, T-058, T-060, T-061.
 The pure-VI tier is complete (T-059 is an inspection item recorded in
 `docs/Path-Derivation-Audit.md`). Delivery & filtering cluster complete
-(T-011/012/013/019/031/033). File mechanics in progress (T-034, T-039 done).
-Remaining clusters, `planned` in Test-Strategy §4:
+(T-011/012/013/019/031/033). File mechanics cluster complete (T-006/034/039/042).
+Backpressure warm-ups done (T-044 queue mode, T-046 unbounded). Remaining, `planned`
+in Test-Strategy §4:
 
-- **File mechanics:** T-006, T-042 (temp-root fixture, file readback).
+- **Backpressure drop tests:** now pure U-tier against `ApplyDropPolicy.vi`
+  (extraction done). T-047 (drop-oldest) entries added, build IN PROGRESS; T-048
+  (drop-newest) and T-049 (level-aware, incl. -049-e oracle) entries added, planned.
+  T-050 (no-blocking) / T-051 (drop notice) still need a controlled integration
+  overflow. See the backpressure cluster note by T-044.
+- **Lifecycle:** T-052-T-055.
+- Parked: T-021 (ConfigReader backlog), T-028 (resolve-once).
+- **Lifecycle:** T-052-T-055.
+- Parked: T-021 (ConfigReader backlog), T-028 (resolve-once).
 - **Backpressure:** T-044, T-046-T-051.
 - **Lifecycle:** T-052-T-055.
 - Parked: T-021 (ConfigReader backlog), T-028 (resolve-once).
