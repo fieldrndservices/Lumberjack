@@ -44,14 +44,18 @@
 		<Item Name="Relay - filtered tap.vi" Type="VI" URL="../Integration/Relay - filtered tap.vi"/>
 		<Item Name="Relay - message mode.vi" Type="VI" URL="../Integration/Relay - message mode.vi"/>
 		<Item Name="Relay - queue mode.vi" Type="VI" URL="../Integration/Relay - queue mode.vi"/>
+		<Item Name="Shutdown - flush.vi" Type="VI" URL="../Integration/Shutdown - flush.vi"/>
+		<Item Name="Shutdown - on error.vi" Type="VI" URL="../Integration/Shutdown - on error.vi"/>
 		<Item Name="Source tag - explicit.vi" Type="VI" URL="../Integration/Source tag - explicit.vi"/>
 		<Item Name="Statement - fields.vi" Type="VI" URL="../Integration/Statement - fields.vi"/>
 	</Item>
 	<Item Name="Unit" Type="Folder">
 		<Property Name="NI.SortType" Type="Int">0</Property>
+		<Item Name="Backpressure - drop notice.vi" Type="VI" URL="../Unit/Backpressure - drop notice.vi"/>
 		<Item Name="Backpressure - drop-newest.vi" Type="VI" URL="../Unit/Backpressure - drop-newest.vi"/>
 		<Item Name="Backpressure - drop-oldest.vi" Type="VI" URL="../Unit/Backpressure - drop-oldest.vi"/>
 		<Item Name="Backpressure - level-aware.vi" Type="VI" URL="../Unit/Backpressure - level-aware.vi"/>
+		<Item Name="Backpressure - no blocking.vi" Type="VI" URL="../Unit/Backpressure - no blocking.vi"/>
 		<Item Name="Config - DTO round trip.vi" Type="VI" URL="../Unit/Config - DTO round trip.vi"/>
 		<Item Name="Config - resolve.vi" Type="VI" URL="../Unit/Config - resolve.vi"/>
 		<Item Name="Config - validate.vi" Type="VI" URL="../Unit/Config - validate.vi"/>

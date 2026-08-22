@@ -387,7 +387,7 @@ dequeue the exposed queue: a/b/c FIFO delivery, d empty-after (exactly three, no
 Direct SRS-025 test (the queue mode every relay probe uses).
 
 BACKPRESSURE CLUSTER NOTE: drop-policy logic (T-047/048/049, SRS-057) was extracted
-into the pure helper `src/Support/Backpressure/ApplyDropPolicy.vi`
+into the pure helper `src/Support/Backpressure/ApplyBackPressure.vi`
 (`pending`, `incoming`, `queueBound`, `DropPolicy`, `worstSeverityIn` ->
 `result`, `dropped`, `droppedStatement`, `worstSeverityOut`), so these are true U-tier
 unit tests: build inputs, call the VI, assert outputs, no actors and no timing. The
@@ -427,28 +427,28 @@ VI Documentation line: `Implements LMBR-T-048 -> SRS-057. Assert-level IDs: Test
 Note: `DropPolicy = DropNewest`. Full case identical setup to T-047; drop-newest
 rejects `incoming`, leaving `pending` intact. Room case appends as usual.
 
-### tests/Unit/Backpressure - level-aware.vi  (T-049 -> SRS-057)  — planned
+### tests/Unit/Backpressure - level-aware.vi  (T-049 -> SRS-057)  — BUILT
 
 VI Documentation line: `Implements LMBR-T-049 -> SRS-057. Assert-level IDs: Test-ID-Assert-Checklist.md.`
 
-- [ ] `LMBR-T-049-a scenario A: oldest least-severe queued is the victim (droppedStatement.message = "d1")`
-- [ ] `LMBR-T-049-b scenario A: incoming admitted at tail (result[3].message = "i")`
-- [ ] `LMBR-T-049-c scenario A: bound preserved (Array Size(result) = 4)`
-- [ ] `LMBR-T-049-d scenario A: floor recomputed (worstSeverityOut = DEBUG)`
-- [ ] `LMBR-T-049-e scenario B: incoming at/below floor is dropped (droppedStatement.message = "t")`
-- [ ] `LMBR-T-049-f scenario B: buffer tail unchanged (result[3].message = "d2")`
-- [ ] `LMBR-T-049-g scenario B: buffer size unchanged (Array Size(result) = 4)`
-- [ ] `LMBR-T-049-h scenario C: all-protected, incoming dropped (droppedStatement.message = "f2")`
-- [ ] `LMBR-T-049-i scenario C: protected head intact (result[0].message = "f")`
-- [ ] `LMBR-T-049-j scenario C: buffer size unchanged (Array Size(result) = 3)`
-- [ ] `LMBR-T-049-k scenario D: non-protected is the victim, not the older ERROR (droppedStatement.message = "d")`
-- [ ] `LMBR-T-049-l scenario D: protected ERROR retained (result[0].message = "e")`
-- [ ] `LMBR-T-049-m oracle B: result sequence equal (fast-path = forced scan)`
-- [ ] `LMBR-T-049-n oracle B: droppedStatement.message equal (fast-path = forced scan)`
-- [ ] `LMBR-T-049-o oracle B: worstSeverityOut equal (fast-path = forced scan)`
-- [ ] `LMBR-T-049-p oracle tie: result sequence equal (fast-path = forced scan)`
-- [ ] `LMBR-T-049-q oracle tie: droppedStatement.message equal (fast-path = forced scan)`
-- [ ] `LMBR-T-049-r oracle tie: worstSeverityOut equal (fast-path = forced scan)`
+- [x] `LMBR-T-049-a scenario A: oldest least-severe queued is the victim (droppedStatement.message = "d1")`
+- [x] `LMBR-T-049-b scenario A: incoming admitted at tail (result[3].message = "i")`
+- [x] `LMBR-T-049-c scenario A: bound preserved (Array Size(result) = 4)`
+- [x] `LMBR-T-049-d scenario A: floor recomputed (worstSeverityOut = DEBUG)`
+- [x] `LMBR-T-049-e scenario B: incoming at/below floor is dropped (droppedStatement.message = "t")`
+- [x] `LMBR-T-049-f scenario B: buffer tail unchanged (result[3].message = "d2")`
+- [x] `LMBR-T-049-g scenario B: buffer size unchanged (Array Size(result) = 4)`
+- [x] `LMBR-T-049-h scenario C: all-protected, incoming dropped (droppedStatement.message = "f2")`
+- [x] `LMBR-T-049-i scenario C: protected head intact (result[0].message = "f")`
+- [x] `LMBR-T-049-j scenario C: buffer size unchanged (Array Size(result) = 3)`
+- [x] `LMBR-T-049-k scenario D: non-protected is the victim, not the older ERROR (droppedStatement.message = "d")`
+- [x] `LMBR-T-049-l scenario D: protected ERROR retained (result[0].message = "e")`
+- [x] `LMBR-T-049-m oracle B: result sequence equal (fast-path = forced scan)`
+- [x] `LMBR-T-049-n oracle B: droppedStatement.message equal (fast-path = forced scan)`
+- [x] `LMBR-T-049-o oracle B: worstSeverityOut equal (fast-path = forced scan)`
+- [x] `LMBR-T-049-p oracle tie: result sequence equal (fast-path = forced scan)`
+- [x] `LMBR-T-049-q oracle tie: droppedStatement.message equal (fast-path = forced scan)`
+- [x] `LMBR-T-049-r oracle tie: worstSeverityOut equal (fast-path = forced scan)`
 
 Scenarios (DropPolicy = LevelAware; severity from `Statement.level`; protected =
 `level <= ERROR`; floor = `TRACE`; tie-break: incoming loses ties, Design 5.7):
@@ -457,9 +457,75 @@ B same buf, incoming=t:TRACE, fast-path (e-g); C `[f:FATAL,e1:ERROR,e2:ERROR]` q
 wSevIn=ERROR incoming=f2:FATAL (h-j); D `[e:ERROR,d:DEBUG]` qb2 wSevIn=DEBUG incoming=w:WARN
 (k,l). Oracle (m-r): each vector is run twice, correct wSevIn vs `OFF`, and the three
 outputs compared field-by-field (one assert each, no combined criteria). m-o = vector B
-(below floor); p-r = tie vector `[td1:DEBUG,tw:WARN,td2:DEBUG]` incoming=td3:DEBUG. The
+(below floor); p-r = tie vector `[td1:DEBUG,tw:WARN,td2:DEBUG]` qb3 incoming=td3:DEBUG
+(qb must equal the buffer size so it is full and the tie engages). The
 oracle is the V&V evidence the fast-path does not change SRS-057 behavior. One claim per
 assert throughout.
+
+### tests/Unit/Backpressure - no blocking.vi  (T-050 -> SRS-058)  — BUILT
+
+VI Documentation line: `Implements LMBR-T-050 -> SRS-058. Assert-level IDs: Test-ID-Assert-Checklist.md.`
+
+- [x] `LMBR-T-050-a sustained overflow never grows the buffer (Array Size(result) = queueBound every iteration)`
+- [x] `LMBR-T-050-b every admission drops immediately (dropped? TRUE every iteration)`
+
+Note: pure against `ApplyBackPressure`. `pending` full = `["s0","s1","s2"]`, `queueBound = 3`,
+`DropPolicy = DropOldest`, `worstSeverityIn = OFF`. Loop N=10 admitting a new `incoming`,
+feed `result` back as `pending`, AND-accumulate `(dropped? AND size==queueBound)`.
+Demonstrates SRS-058: admission is synchronous and bounded (no wait, no growth), so the
+caller never needs to block.
+
+### tests/Unit/Backpressure - drop notice.vi  (T-051 -> SRS-059)  — a-d BUILT; -e (emission integration) pending
+
+VI Documentation line: `Implements LMBR-T-051 -> SRS-059. Assert-level IDs: Test-ID-Assert-Checklist.md.`
+
+- [x] `LMBR-T-051-a count rendered (BuildDropNotice(5).message = "dropped statement count = 5")`
+- [x] `LMBR-T-051-b protected severity (level = ERROR)`
+- [x] `LMBR-T-051-c reserved tag (sourceTag = "lumberjack.dropped")`
+- [x] `LMBR-T-051-d count rendered for N=1 (message = "dropped statement count = 1")`
+- [ ] `LMBR-T-051-e (integration) bounded appender that dropped emits a record with sourceTag "lumberjack.dropped"`
+
+Note: needs a new pure VI `BuildDropNotice` (`src/Support/Backpressure`, `droppedCount ->
+Statement`), extracted from `Actor Core` like `ApplyBackPressure`. Format: `message =
+"dropped statement count = <N>"`, `level = ERROR` (protected, so level-aware never sheds
+the notice), `sourceTag = "lumberjack.dropped"` (reserved `lumberjack.*` namespace).
+`Actor Core` emits the notice **straight to the sink, bypassing `ApplyBackPressure`**, so
+drop-oldest/newest can't discard it either. a-d are pure; -e is the one integration check.
+
+### tests/Integration/Shutdown - flush.vi  (T-052 -> SRS-002)  — BUILT
+
+VI Documentation line: `Implements LMBR-T-052 -> SRS-002. Assert-level IDs: Test-ID-Assert-Checklist.md.`
+
+- [x] `LMBR-T-052-a all queued statements flushed (line count = 50)`
+- [x] `LMBR-T-052-b FIFO start (first line contains "flush-01")`
+- [x] `LMBR-T-052-c flushed through the last (last line contains "flush-50")`
+
+Note: integration, validates the flush fence. Arrange: temp root; `Initialize` (global
+ALL, `enableDefaultFile = FALSE`); `Register File Appender` (id "FA", threshold ALL,
+**unbounded** `queueBound = -1`, temp root). Act: `Log` "flush-01".."flush-50" (sourceTag
+FLUSH, INFO), then `Logger.Shutdown` (synchronous). Assert via `Read Log Lines`. Unbounded
+= flush test, not drop. The fence writes all queued statements before flush/close/stop, so
+`count = 50` proves no loss to a premature stop. `Clear Errors` at the test start (serial
+isolation).
+
+### tests/Integration/Shutdown - on error.vi  (T-053 -> SRS-004)  — planned
+
+VI Documentation line: `Implements LMBR-T-053 -> SRS-004. Assert-level IDs: Test-ID-Assert-Checklist.md.`
+
+- [ ] `LMBR-T-053-a flush ran despite incoming error (line count = 50)`
+- [ ] `LMBR-T-053-b drain reached the last statement (last line contains "eflush-50")`
+- [ ] `LMBR-T-053-c incoming error preserved on error out (code 42)`
+
+Note: integration, validates error-tolerant teardown. Arrange as T-052 (temp root;
+`Initialize` global ALL, no default file; `Register File Appender` id "FA", threshold ALL,
+unbounded, temp root; `Clear Errors` at top). Act: `Log` "eflush-01".."eflush-50" (sourceTag
+EFLUSH, INFO); build a manufactured error (status TRUE, code 42, source "T-053 injected")
+and wire it into **`Logger.Shutdown`'s `error in`**, called **directly** (not via
+`Close test manager`, so we test Shutdown's own error handling). Branch `Shutdown`'s
+`error out`: read `code` for `-053-c`, then **`Clear Errors`** before `Read Log Lines` /
+asserts / `Delete Temp Root` (else the injected error gates the reads and marks the test
+errored). If `-053-a` fails, `Shutdown` is error-gating its fence; fix = clear/branch the
+incoming error so the shutdown sequence runs, then re-merge it into `error out`.
 
 VI Documentation line: `Implements LMBR-T-006 -> SRS-010, SRS-013. Assert-level IDs: Test-ID-Assert-Checklist.md.`
 
@@ -710,28 +776,24 @@ VI Documentation line: `Implements LMBR-T-045 -> SRS-023, SRS-026. Assert-level 
 
 ## Coverage note
 
-205 asserts across 37 VIs, all tagged. Case IDs exercised: T-001, T-002, T-003,
+232 asserts across 41 VIs, all tagged. Case IDs exercised: T-001, T-002, T-003,
 T-004, T-005, T-006, T-007, T-008, T-009, T-010, T-011, T-012, T-013, T-014, T-015,
 T-016, T-017, T-018, T-019, T-020, T-022, T-023, T-024, T-025, T-026, T-027, T-029,
 T-030, T-031, T-032, T-033, T-034, T-035, T-036, T-037, T-038, T-039, T-040, T-041,
-T-042, T-043, T-044, T-045, T-046, T-047, T-048, T-056, T-057, T-058, T-060, T-061.
+T-042, T-043, T-044, T-045, T-046, T-047, T-048, T-049, T-050, T-051 (a-d), T-052, T-056, T-057, T-058, T-060, T-061.
 The pure-VI tier is complete (T-059 is an inspection item recorded in
 `docs/Path-Derivation-Audit.md`). Delivery & filtering cluster complete
 (T-011/012/013/019/031/033). File mechanics cluster complete (T-006/034/039/042).
-Backpressure warm-ups done (T-044 queue mode, T-046 unbounded). Remaining, `planned`
+Backpressure drop-policy cluster complete: T-044 (queue mode), T-046 (unbounded),
+and the pure `ApplyBackPressure` unit tests T-047 (drop-oldest), T-048 (drop-newest),
+T-049 (level-aware, incl. the fast-path/scan oracle) all green. Remaining, `planned`
 in Test-Strategy §4:
 
-- **Backpressure drop tests:** now pure U-tier against `ApplyDropPolicy.vi`
-  (extraction done). T-047 (drop-oldest) entries added, build IN PROGRESS; T-048
-  (drop-newest) and T-049 (level-aware, incl. -049-e oracle) entries added, planned.
-  T-050 (no-blocking) / T-051 (drop notice) still need a controlled integration
-  overflow. See the backpressure cluster note by T-044.
+- **Backpressure:** T-050 (no-blocking) done. T-051 (drop notice) pure part
+  `-a…d` done against `BuildDropNotice`. `-051-e` (the emission integration check)
+  is **deferred to the post-PR bounded-backpressure follow-up** (bundled with the
+  ConfigReader implementation): the bounded intake buffer/drain isn't built yet, so
+  the appender is unbounded-only today. Decision primitives (`ApplyBackPressure`,
+  `BuildDropNotice`) are done and tested; see PR-Notes §4.
 - **Lifecycle:** T-052-T-055.
-- Parked: T-021 (ConfigReader backlog), T-028 (resolve-once).
-- **Lifecycle:** T-052-T-055.
-- Parked: T-021 (ConfigReader backlog), T-028 (resolve-once).
-- **Backpressure:** T-044, T-046-T-051.
-- **Lifecycle:** T-052-T-055.
-- Parked: T-021 (ConfigReader backlog), T-028 (resolve-once).
-- File mechanics, backpressure, and lifecycle clusters remain.
-- **T-021** (ConfigReader backlog) and **T-028** (resolve-once) remain parked.
+- **Parked:** T-021 (ConfigReader backlog), T-028 (resolve-once).

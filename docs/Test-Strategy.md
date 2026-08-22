@@ -261,15 +261,15 @@ archived today still resolves against a future revision of this table.
 | LMBR-T-046 | Unbounded default | no loss with an unbounded queue | U/I | 055 | tests/Integration/Backpressure - unbounded no loss.vi |
 | LMBR-T-047 | Drop-oldest | on a full bound, oldest is discarded, newest admitted | U | 057 | tests/Unit/Backpressure - drop-oldest.vi |
 | LMBR-T-048 | Drop-newest | on a full bound, newest is discarded | U | 057 | tests/Unit/Backpressure - drop-newest.vi |
-| LMBR-T-049 | Level-aware | ERROR/FATAL never discarded; lower severities shed first | U | 057 | planned |
-| LMBR-T-050 | No blocking | enqueue path returns without blocking when full | U | 058 | planned |
-| LMBR-T-051 | Drop notice | discards produce a synthetic "N statements dropped" record | U/I | 059 | planned |
+| LMBR-T-049 | Level-aware | ERROR/FATAL never discarded; lower severities shed first | U | 057 | tests/Unit/Backpressure - level-aware.vi |
+| LMBR-T-050 | No blocking | enqueue path returns without blocking when full | U | 058 | tests/Unit/Backpressure - no blocking.vi |
+| LMBR-T-051 | Drop notice | discards produce a synthetic "N statements dropped" record | U/I | 059 | tests/Unit/Backpressure - drop notice.vi (a-d; -e emission integration pending) |
 
 ### 4.9 Lifecycle and error handling
 
 | Test ID | Case | Assertion | Tier | SRS | Implementing VI |
 |---|---|---|---|---|---|
-| LMBR-T-052 | Shutdown flush | queued statements are written before stop completes | I | 002 | planned |
+| LMBR-T-052 | Shutdown flush | queued statements are written before stop completes | I | 002 | tests/Integration/Shutdown - flush.vi |
 | LMBR-T-053 | Shutdown on error | shutdown flush/close runs even with an incoming error | I | 004 | planned |
 | LMBR-T-054 | CatchError log | a caught error is logged at a derived severity | I | 041 | planned |
 | LMBR-T-055 | Verbosity gate | dialog shown only at/above configured verbosity | U | 042 | planned |

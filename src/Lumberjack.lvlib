@@ -56,7 +56,9 @@
 	</Item>
 	<Item Name="Support" Type="Folder">
 		<Item Name="Backpressure" Type="Folder">
+			<Property Name="NI.LibItem.Scope" Type="Int">4</Property>
 			<Item Name="ApplyBackPressure.vi" Type="VI" URL="../Support/Backpressure/ApplyBackPressure.vi"/>
+			<Item Name="BuildDropNotice.vi" Type="VI" URL="../Support/Backpressure/BuildDropNotice.vi"/>
 		</Item>
 		<Item Name="Config" Type="Folder">
 			<Property Name="NI.LibItem.Scope" Type="Int">4</Property>
@@ -130,6 +132,7 @@
 			<Item Name="Sanitize.vi" Type="VI" URL="../Support/Tag/Sanitize.vi"/>
 		</Item>
 		<Item Name="Time" Type="Folder">
+			<Property Name="NI.LibItem.Scope" Type="Int">4</Property>
 			<Item Name="FormatTimeString.vi" Type="VI" URL="../Support/Time/FormatTimeString.vi"/>
 		</Item>
 	</Item>

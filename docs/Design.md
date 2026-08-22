@@ -562,7 +562,7 @@ can tap only a subset (for example, ERROR and above) (SRS-LMBR-023).
     dropped; and when the set is **all FATAL/ERROR** (nothing sheddable) the
     **incoming** is dropped (never discard an already-queued critical record;
     preserve the bound rather than exceed it).
-  - The decision is factored into a pure helper `ApplyDropPolicy` (`pending`,
+  - The decision is factored into a pure helper `ApplyBackPressure` (`pending`,
     `incoming`, `queueBound`, `dropPolicy`, `worstSeverityIn` -> `result`,
     `dropped?`, `droppedStatement`, `worstSeverityOut`); `Actor Core`'s intake
     calls it, stores `result`, carries `worstSeverityOut` back as the next
@@ -589,8 +589,15 @@ can tap only a subset (for example, ERROR and above) (SRS-LMBR-023).
   full bounded queue the drop policy acts immediately. This is what preserves
   SRS-LMBR-052 under saturation.
 - **Loss observability (SRS-LMBR-059):** each appender keeps a dropped-statement
-  counter and periodically emits a synthetic "N statements dropped" record into
-  its own output so gaps are visible.
+  counter and periodically emits a synthetic drop-notice record into its own output
+  so gaps are visible. The notice is built by a pure helper `BuildDropNotice`
+  (`droppedCount` -> `Statement`): `message = "dropped statement count = <N>"`
+  (key=value form, no singular/plural cases), `level = ERROR`, `sourceTag =
+  "lumberjack.dropped"` (the `lumberjack.*` namespace is reserved for Lumberjack's
+  own system messages). Two properties keep the notice from being lost itself:
+  `ERROR` is protected so level-aware never sheds it, and `Actor Core` emits it
+  **straight to the sink, bypassing the drop policy** (not back through
+  `ApplyBackPressure`), so drop-oldest/drop-newest can't discard it either.
 
 Implementation note: the drop-oldest and bound are enforced inside the appender
 as it manages intake, not by blocking the framework enqueue, so the caller-side
