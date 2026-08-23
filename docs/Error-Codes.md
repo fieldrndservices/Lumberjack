@@ -6,7 +6,7 @@
 
 **Status:** Draft, reconciliation in progress. Seeded from the Build-Checklist
 item 33 plan; the "Impl?" and "Raised by (confirmed)" columns need verifying
-against the actual VIs. SOP-117 review applies before this is authoritative.
+against the actual VIs. Review applies before this is authoritative.
 
 ---
 
@@ -121,7 +121,7 @@ paths are exercised, not just the happy paths.
 Text registered in `errors/Lumberjack-errors.txt` (shown by `General Error
 Handler`). The static description carries the general text; the runtime `source`
 adds the offending value after the `Lumberjack: ` prefix (§1). Drafts below for
-SOP-117 review; `<<context>>` is the runtime value the chokepoint helper substitutes.
+review; `<<context>>` is the runtime value the chokepoint helper substitutes.
 The static `errors/Lumberjack-errors.txt` description is this text with the
 `<<context>>` clause generalized. `<...>` marks a placeholder to fill.
 

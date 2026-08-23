@@ -271,8 +271,8 @@ archived today still resolves against a future revision of this table.
 |---|---|---|---|---|---|
 | LMBR-T-052 | Shutdown flush | queued statements are written before stop completes | I | 002 | tests/Integration/Shutdown - flush.vi |
 | LMBR-T-053 | Shutdown on error | shutdown flush/close runs even with an incoming error | I | 004 | planned |
-| LMBR-T-054 | CatchError log | a caught error is logged at a derived severity | I | 041 | planned |
-| LMBR-T-055 | Verbosity gate | dialog shown only at/above configured verbosity | U | 042 | planned |
+| LMBR-T-054 | CatchError log | a caught error is logged at a derived severity | I | 041 | built |
+| LMBR-T-055 | Verbosity gate | dialog shown only at/above configured verbosity | U | 042 | built |
 
 ### 4.10 PPL path safety
 

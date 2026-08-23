@@ -30,6 +30,7 @@
 	<Item Name="Integration" Type="Folder">
 		<Property Name="NI.SortType" Type="Int">0</Property>
 		<Item Name="Backpressure - unbounded no loss.vi" Type="VI" URL="../Integration/Backpressure - unbounded no loss.vi"/>
+		<Item Name="CatchError - log.vi" Type="VI" URL="../Integration/CatchError - log.vi"/>
 		<Item Name="Delivery - broadcast.vi" Type="VI" URL="../Integration/Delivery - broadcast.vi"/>
 		<Item Name="Delivery - single appender.vi" Type="VI" URL="../Integration/Delivery - single appender.vi"/>
 		<Item Name="Fault Isolation - stopped appender.vi" Type="VI" URL="../Integration/Fault Isolation - stopped appender.vi"/>
@@ -73,6 +74,7 @@
 		<Item Name="Severity - name round trip.vi" Type="VI" URL="../Unit/Severity - name round trip.vi"/>
 		<Item Name="Severity - rank compare.vi" Type="VI" URL="../Unit/Severity - rank compare.vi"/>
 		<Item Name="Source tag - defaulting.vi" Type="VI" URL="../Unit/Source tag - defaulting.vi"/>
+		<Item Name="Verbosity - dialog gate.vi" Type="VI" URL="../Unit/Verbosity - dialog gate.vi"/>
 	</Item>
 	<Item Name="All Integration Tests.vi" Type="VI" URL="../All Integration Tests.vi"/>
 	<Item Name="All Unit Tests.vi" Type="VI" URL="../All Unit Tests.vi"/>

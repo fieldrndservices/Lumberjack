@@ -135,31 +135,36 @@
 			<Property Name="NI.LibItem.Scope" Type="Int">4</Property>
 			<Item Name="FormatTimeString.vi" Type="VI" URL="../Support/Time/FormatTimeString.vi"/>
 		</Item>
+		<Item Name="Verbosity" Type="Folder">
+			<Item Name="ShouldDisplay.vi" Type="VI" URL="../Support/Verbosity/ShouldDisplay.vi">
+				<Property Name="NI.LibItem.Scope" Type="Int">4</Property>
+			</Item>
+		</Item>
 	</Item>
 	<Item Name="TypeDefs" Type="Folder">
 		<Property Name="NI.LibItem.Scope" Type="Int">1</Property>
-		<Property Name="NI.SortType" Type="Int">3</Property>
+		<Property Name="NI.SortType" Type="Int">0</Property>
 		<Item Name="ConfigDTO" Type="Folder">
 			<Item Name="AppenderConfigDTO.ctl" Type="VI" URL="../TypeDefs/ConfigDTO/AppenderConfigDTO.ctl"/>
 			<Item Name="FileAppenderConfigDTO.ctl" Type="VI" URL="../TypeDefs/ConfigDTO/FileAppenderConfigDTO.ctl"/>
+			<Item Name="FileConfigDTO.ctl" Type="VI" URL="../TypeDefs/ConfigDTO/FileConfigDTO.ctl"/>
 			<Item Name="FilterDTO.ctl" Type="VI" URL="../TypeDefs/ConfigDTO/FilterDTO.ctl"/>
 			<Item Name="LumberjackConfigDTO.ctl" Type="VI" URL="../TypeDefs/ConfigDTO/LumberjackConfigDTO.ctl"/>
-			<Item Name="FileConfigDTO.ctl" Type="VI" URL="../TypeDefs/ConfigDTO/FileConfigDTO.ctl"/>
 		</Item>
-		<Item Name="Statement.ctl" Type="VI" URL="../TypeDefs/Statement.ctl"/>
+		<Item Name="AppenderConfig.ctl" Type="VI" URL="../TypeDefs/AppenderConfig.ctl"/>
 		<Item Name="DropPolicy.ctl" Type="VI" URL="../TypeDefs/DropPolicy.ctl"/>
+		<Item Name="FileAppenderConfig.ctl" Type="VI" URL="../TypeDefs/FileAppenderConfig.ctl"/>
+		<Item Name="FileConfig.ctl" Type="VI" URL="../TypeDefs/FileConfig.ctl"/>
 		<Item Name="Filter.ctl" Type="VI" URL="../TypeDefs/Filter.ctl"/>
 		<Item Name="FilterMode.ctl" Type="VI" URL="../TypeDefs/FilterMode.ctl"/>
+		<Item Name="LumberjackConfig.ctl" Type="VI" URL="../TypeDefs/LumberjackConfig.ctl"/>
+		<Item Name="ManagerLaunchInputs.ctl" Type="VI" URL="../TypeDefs/ManagerLaunchInputs.ctl"/>
+		<Item Name="RegistryEntry.ctl" Type="VI" URL="../TypeDefs/RegistryEntry.ctl"/>
+		<Item Name="RelayAppenderConfig.ctl" Type="VI" URL="../TypeDefs/RelayAppenderConfig.ctl"/>
 		<Item Name="RelayMode.ctl" Type="VI" URL="../TypeDefs/RelayMode.ctl"/>
 		<Item Name="Severity.ctl" Type="VI" URL="../TypeDefs/Severity.ctl"/>
-		<Item Name="AppenderConfig.ctl" Type="VI" URL="../TypeDefs/AppenderConfig.ctl"/>
-		<Item Name="FileAppenderConfig.ctl" Type="VI" URL="../TypeDefs/FileAppenderConfig.ctl"/>
-		<Item Name="RelayAppenderConfig.ctl" Type="VI" URL="../TypeDefs/RelayAppenderConfig.ctl"/>
-		<Item Name="LumberjackConfig.ctl" Type="VI" URL="../TypeDefs/LumberjackConfig.ctl"/>
 		<Item Name="Snapshot.ctl" Type="VI" URL="../TypeDefs/Snapshot.ctl"/>
-		<Item Name="FileConfig.ctl" Type="VI" URL="../TypeDefs/FileConfig.ctl"/>
-		<Item Name="RegistryEntry.ctl" Type="VI" URL="../TypeDefs/RegistryEntry.ctl"/>
 		<Item Name="SnapshotWaitMode.ctl" Type="VI" URL="../TypeDefs/SnapshotWaitMode.ctl"/>
-		<Item Name="ManagerLaunchInputs.ctl" Type="VI" URL="../TypeDefs/ManagerLaunchInputs.ctl"/>
+		<Item Name="Statement.ctl" Type="VI" URL="../TypeDefs/Statement.ctl"/>
 	</Item>
 </Library>

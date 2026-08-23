@@ -423,6 +423,61 @@ The root never parses or holds a concrete appender's type-specific fields; it
 only moves the constructed object. Adding a new appender type is a new subclass
 with no manager changes.
 
+### 4.5 ConfigReader (component design)
+
+`ConfigReader` is the component that runs the 4.2 pipeline: it turns the
+programmatic baseline plus an optional JSON file into a validated native
+`LumberjackConfig`, once, at launch (SRS-LMBR-051). It is the seam between the
+string/DTO file world and the native config the manager consumes, nothing
+downstream sees JSON or a DTO. It lives in `src/Support/Config` (+
+`Config/Mapping`), protected with the test library as friend, off the public PPL
+surface (8), and executes inside the manager's resolve step (4.3, step 2). There
+is no runtime re-read.
+
+**Entry point and interface.** `Resolve.vi` is the orchestrator. Inputs: the
+baseline (`GlobalThreshold`, the default `FileAppenderConfig`, `enableDefaultFile`),
+the optional `ConfigFilePath`, and `HostApplicationPath`. Output: `ResolvedConfig`
+(native `LumberjackConfig`) plus the standard error cluster, which carries a
+non-fatal warning on the missing-file path and a fatal error on a parse or
+validation failure.
+
+**Constituent steps and the VIs that own them** (each realizing a step of 4.2):
+
+1. Build the baseline DTO from defaults overlaid with the launch inputs
+   (enum-to-name via `SeverityString` and siblings; paths rendered as strings).
+2. `CheckSchemaVersion` rejects a file whose `schemaVersion` is not in the accepted
+   set (error 5021) before any field is trusted.
+3. Merge: pass the file text to `Unflatten From JSON` with the baseline DTO as the
+   default-value input, so keys present in the file override and absent keys retain
+   the baseline (per-key merge, SRS-LMBR-046). A missing file skips the merge and
+   returns the baseline with a non-fatal warning naming the path (SRS-LMBR-047);
+   unparseable text fails launch (SRS-LMBR-048).
+4. Validate the merged DTO field-by-field (`ValidateLumberjackConfigDTO` and the
+   file/appender/filter validators): unknown enum names, out-of-range thresholds,
+   a bound not `-1`-or-positive (5022), filter band order (5023), empty id (5024),
+   structural type (5025), each naming the offending setting. The default-file
+   sub-config validation is gated on `enableDefaultFile` at the top of the stack.
+5. Map the validated DTO to native (`LumberjackConfigFromDTO` and siblings:
+   name-to-enum, `String To Path`).
+6. `ResolveHostRoot` supplies the base root when `rootFolder` is empty (6); a
+   resource named by a valid config is not proven here, its failure surfaces at the
+   appender's own launch (SRS-LMBR-049).
+
+**Build status (this PR is design only).** The read/validate/map VIs and
+`Config - resolve.vi` exist and cover the no-file, missing, and invalid paths
+(LMBR-T-020/022/023). The **per-key merge is not yet fully realized**: the current
+`Merge.vi` is an interim full-object overwrite, an empty or absent value clobbers
+the baseline rather than falling back, so SRS-LMBR-046's partial-file semantics are
+incomplete. The robust realization (the baseline-as-default `Unflatten` above, or a
+presence-mask two-default diff if the primitive cannot distinguish an absent key
+from one supplied at the default value) and its `LMBR-T-021` per-key-merge test are
+deferred to the ConfigReader implementation (Build-Checklist F1-F4), post-1.0.
+
+**Out of scope here.** Bounded-queue backpressure and `DropPolicy` live integration
+(the appender-owned intake buffer and drain) is tracked as a separate future PR, not
+part of ConfigReader; the decision primitives (`ApplyBackPressure`,
+`BuildDropNotice`) are already built and unit-tested.
+
 ---
 
 ## 5. Runtime Behavior
@@ -756,7 +811,7 @@ default `Auto`). `Auto` reads the real `Application.Kind`, so production callers
 are unaffected; a unit test wires `RunTimeSystem` to force the built-app branch
 and confirm the 5000 fault from the IDE (LMBR-T-058). This overrides only
 environment detection, not any path input, so SRS-LMBR-064 (external-path
-computation isolated in one VI) still holds. (SOP-117 draft.)
+computation isolated in one VI) still holds. (Draft.)
 
 ---
 

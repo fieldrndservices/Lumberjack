@@ -7,8 +7,7 @@ house style, so conventions stay consistent and don't have to be reconstructed
 from memory each time. Companion to `Doc-Standards.md` (which owns how VIs and
 terminals are *documented*); this document owns how they are *named and scoped*.
 
-**Status:** Draft. Content entered against this standard still passes SOP-117
-human review before being treated as authoritative.
+**Status:** Draft. Review before treating as authoritative.
 
 ---
 

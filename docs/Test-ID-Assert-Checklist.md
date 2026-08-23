@@ -11,7 +11,7 @@ rolling up to the case-level Test ID that traces to the SRS (Test-Strategy §4).
 so the whole pure-VI tier is complete. Remaining pure item is inspection-only:
 T-059 (no self-derived paths). T-021 (ConfigReader backlog) and T-028
 (resolve-once, integration) remain parked. Draft record, not a signed
-verification artifact; still subject to SOP-117 human review before it is treated
+verification artifact; still subject to review before it is treated
 as authoritative.
 
 **One cleanup nit remaining:** in `Relay - Message Mode.vi`, assert `-a` is
@@ -340,7 +340,7 @@ VI Documentation line: `Implements LMBR-T-056, T-057, T-058 -> SRS-064, SRS-039.
 - [x] `LMBR-T-058-b Explicit path wins over RTS fault (returned verbatim, no error)`
 - [x] `LMBR-T-058-c Resolved root is Not A Path when the 5000 fault is raised`
 
-Decision (SOP-117 draft): T-058 is made testable from the IDE by adding an
+Decision (Draft): T-058 is made testable from the IDE by adding an
 injectable `app kind` input to `ResolveHostRoot`, typedef enum `HostAppKind`
 {`Auto`(0), `DevelopmentSystem`, `RunTimeSystem`}, default `Auto`. `Auto` reads
 the real `Application.Kind` so existing (unwired) callers are unchanged; the test
@@ -508,13 +508,13 @@ FLUSH, INFO), then `Logger.Shutdown` (synchronous). Assert via `Read Log Lines`.
 `count = 50` proves no loss to a premature stop. `Clear Errors` at the test start (serial
 isolation).
 
-### tests/Integration/Shutdown - on error.vi  (T-053 -> SRS-004)  — planned
+### tests/Integration/Shutdown - on error.vi  (T-053 -> SRS-004)  — BUILT
 
 VI Documentation line: `Implements LMBR-T-053 -> SRS-004. Assert-level IDs: Test-ID-Assert-Checklist.md.`
 
-- [ ] `LMBR-T-053-a flush ran despite incoming error (line count = 50)`
-- [ ] `LMBR-T-053-b drain reached the last statement (last line contains "eflush-50")`
-- [ ] `LMBR-T-053-c incoming error preserved on error out (code 42)`
+- [x] `LMBR-T-053-a flush ran despite incoming error (line count = 50)`
+- [x] `LMBR-T-053-b drain reached the last statement (last line contains "eflush-50")`
+- [x] `LMBR-T-053-c incoming error preserved on error out (code 42)`
 
 Note: integration, validates error-tolerant teardown. Arrange as T-052 (temp root;
 `Initialize` global ALL, no default file; `Register File Appender` id "FA", threshold ALL,
@@ -525,7 +525,45 @@ and wire it into **`Logger.Shutdown`'s `error in`**, called **directly** (not vi
 `error out`: read `code` for `-053-c`, then **`Clear Errors`** before `Read Log Lines` /
 asserts / `Delete Temp Root` (else the injected error gates the reads and marks the test
 errored). If `-053-a` fails, `Shutdown` is error-gating its fence; fix = clear/branch the
-incoming error so the shutdown sequence runs, then re-merge it into `error out`.
+incoming error so the shutdown sequence runs, then re-merge it into `error out`. Built:
+the `Clear Errors` after `-053-c` is scoped to the injected code so isolation is
+order-independent (does not ride the serial chain).
+
+### tests/Integration/CatchError - log.vi  (T-054 -> SRS-041)  — BUILT
+
+VI Documentation line: `Implements LMBR-T-054 -> SRS-041. Assert-level IDs: Test-ID-Assert-Checklist.md.`
+
+- [x] `LMBR-T-054-a CatchError logged one statement (relay probe received a message)`
+- [x] `LMBR-T-054-b logged message contains the caught error source ("T-054 injected")`
+- [x] `LMBR-T-054-c level = ERROR`
+- [x] `LMBR-T-054-d sourceTag begins with reserved "lumberjack."`
+- [x] `LMBR-T-054-e CatchError error out cleared: status FALSE`
+- [x] `LMBR-T-054-f CatchError error out cleared: code 0`
+- [x] `LMBR-T-054-g dequeuer times out (exactly one statement logged)`
+
+Note: integration. Arrange `Open Test Mgr` (enableDefaultFile FALSE) -> logger;
+`Register Relay Appender` (id "cerr", Mirror, threshold ALL) -> capture queue;
+`ConfigureVerbosity(OFF)` so GEH shows no dialog (log is independent of display,
+SRS-042); `Clear Errors` at top. Act: manufactured error (status TRUE, code 42, source
+"T-054 injected") through `Logger.CatchError`. Assert the captured Statement (`-a..-d`),
+CatchError `error out` (`-e/-f`), and a second timed dequeue (`-g`). Teardown
+`Close Test Mgr` + `Release Relay Queues`. `-d` checks the reserved `lumberjack.`
+prefix (stable contract); tighten to an exact literal if CatchError stamps a fixed tag.
+
+### tests/Unit/Verbosity - dialog gate.vi  (T-055 -> SRS-042)  — BUILT
+
+VI Documentation line: `Implements LMBR-T-055 -> SRS-042. Assert-level IDs: Test-ID-Assert-Checklist.md.`
+
+- [x] `LMBR-T-055-a verbosity ERROR, error FATAL -> dialogType 1 (shown, above threshold)`
+- [x] `LMBR-T-055-b verbosity ERROR, error ERROR -> dialogType 1 (shown, at boundary, inclusive)`
+- [x] `LMBR-T-055-c verbosity ERROR, error WARN  -> dialogType 0 (suppressed, below)`
+- [x] `LMBR-T-055-d verbosity OFF,   error ERROR -> dialogType 0 (verbosity OFF suppresses all)`
+- [x] `LMBR-T-055-e verbosity ALL,   error ERROR -> dialogType 1 (verbosity ALL shows all)`
+
+Note: unit; pure `ShouldDisplay(errorSeverity, verbosity) -> dialogType` via `RankCompare`
+(shown iff rank(errorSeverity) <= rank(verbosity)). Grid covers boundary (`-b`, inclusive),
+above (`-a`), below (`-c`), and the OFF/ALL extremes. Assert the I32 `dialogType`, not a
+boolean, so the 0/1 GEH mapping is covered.
 
 VI Documentation line: `Implements LMBR-T-006 -> SRS-010, SRS-013. Assert-level IDs: Test-ID-Assert-Checklist.md.`
 
@@ -776,11 +814,11 @@ VI Documentation line: `Implements LMBR-T-045 -> SRS-023, SRS-026. Assert-level 
 
 ## Coverage note
 
-232 asserts across 41 VIs, all tagged. Case IDs exercised: T-001, T-002, T-003,
+247 asserts across 44 VIs, all tagged. Case IDs exercised: T-001, T-002, T-003,
 T-004, T-005, T-006, T-007, T-008, T-009, T-010, T-011, T-012, T-013, T-014, T-015,
 T-016, T-017, T-018, T-019, T-020, T-022, T-023, T-024, T-025, T-026, T-027, T-029,
 T-030, T-031, T-032, T-033, T-034, T-035, T-036, T-037, T-038, T-039, T-040, T-041,
-T-042, T-043, T-044, T-045, T-046, T-047, T-048, T-049, T-050, T-051 (a-d), T-052, T-056, T-057, T-058, T-060, T-061.
+T-042, T-043, T-044, T-045, T-046, T-047, T-048, T-049, T-050, T-051 (a-d), T-052, T-053, T-054, T-055, T-056, T-057, T-058, T-060, T-061.
 The pure-VI tier is complete (T-059 is an inspection item recorded in
 `docs/Path-Derivation-Audit.md`). Delivery & filtering cluster complete
 (T-011/012/013/019/031/033). File mechanics cluster complete (T-006/034/039/042).
