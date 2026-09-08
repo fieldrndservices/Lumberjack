@@ -16,10 +16,12 @@
 			<Item Name="Lumberjack File Test.vi" Type="VI" URL="../examples/Lumberjack File Test.vi"/>
 		</Item>
 		<Item Name="scripts" Type="Folder">
+			<Item Name="DebugLogger.vi" Type="VI" URL="../scripts/DebugLogger.vi"/>
+			<Item Name="Delete Previous Report.vi" Type="VI" URL="../scripts/Delete Previous Report.vi"/>
 			<Item Name="PrintLibraryToHTML.vi" Type="VI" URL="../scripts/PrintLibraryToHTML.vi"/>
 		</Item>
-		<Item Name="tests" Type="Folder"/>
 		<Item Name="Lumberjack.lvlib" Type="Library" URL="../src/Lumberjack.lvlib"/>
+		<Item Name="Tests.lvlib" Type="Library" URL="../tests/Tests.lvlib"/>
 		<Item Name="Dependencies" Type="Dependencies"/>
 		<Item Name="Build Specifications" Type="Build"/>
 	</Item>

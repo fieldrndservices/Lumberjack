@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1270" height="1150" viewBox="0 0 1270 1150" font-family="DejaVu Sans, Arial, sans-serif">
+<rect x="0" y="0" width="1270" height="1150" fill="white"/>
+<defs>
+<marker id="ah_blue" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,3 L0,6 Z" fill="#2B6CB0"/></marker>
+<marker id="oah_blue" markerWidth="12" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,3 L0,6" fill="none" stroke="#2B6CB0" stroke-width="1.3"/></marker>
+<marker id="ah_orange" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,3 L0,6 Z" fill="#C0651A"/></marker>
+<marker id="oah_orange" markerWidth="12" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,3 L0,6" fill="none" stroke="#C0651A" stroke-width="1.3"/></marker>
+<marker id="ah_green" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,3 L0,6 Z" fill="#2F7D4F"/></marker>
+<marker id="oah_green" markerWidth="12" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,3 L0,6" fill="none" stroke="#2F7D4F" stroke-width="1.3"/></marker>
+<marker id="ah_grey" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,3 L0,6 Z" fill="#6B7280"/></marker>
+<marker id="oah_grey" markerWidth="12" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,3 L0,6" fill="none" stroke="#6B7280" stroke-width="1.3"/></marker>
+<marker id="ah_red" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,3 L0,6 Z" fill="#B03A2E"/></marker>
+<marker id="oah_red" markerWidth="12" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,3 L0,6" fill="none" stroke="#B03A2E" stroke-width="1.3"/></marker>
+</defs>
+<text x="30" y="36" font-size="20" font-weight="bold" fill="#1F2937">Figure 7. Initialization / launch sequence</text>
+<line x1="185.0" y1="120" x2="185.0" y2="1124" stroke="#B7BEC7" stroke-width="1.4" stroke-dasharray="3,4"/>
+<line x1="485.0" y1="120" x2="485.0" y2="1124" stroke="#B7BEC7" stroke-width="1.4" stroke-dasharray="3,4"/>
+<line x1="785.0" y1="120" x2="785.0" y2="1124" stroke="#B7BEC7" stroke-width="1.4" stroke-dasharray="3,4"/>
+<line x1="1085.0" y1="120" x2="1085.0" y2="1124" stroke="#B7BEC7" stroke-width="1.4" stroke-dasharray="3,4"/>
+<text x="335.0" y="160" font-size="13" text-anchor="middle" fill="#1F2937">Initialize(threshold, fileCfg, paths, enableDefaultFile)</text>
+<line x1="185.0" y1="168" x2="485.0" y2="168" stroke="#2B6CB0" stroke-width="1.8" marker-end="url(#ah_blue)"/>
+<text x="485.0" y="226" font-size="12.5" font-style="italic" text-anchor="start" fill="#B03A2E">PRE-LAUNCH: obtain snapshotNotifier +</text>
+<text x="485.0" y="242" font-size="12.5" font-style="italic" text-anchor="start" fill="#B03A2E">stoppedNotifier (unnamed)</text>
+<text x="485.0" y="285" font-size="13" text-anchor="middle" fill="#1F2937">construct LogManager; SetLaunchInputs (both</text>
+<text x="485.0" y="301" font-size="13" text-anchor="middle" fill="#1F2937">notifiers)</text>
+<path d="M485.0,314 h26 v18 h-26" fill="none" stroke="#2B6CB0" stroke-width="1.8" marker-end="url(#ah_blue)"/>
+<text x="635.0" y="346" font-size="13" text-anchor="middle" fill="#1F2937">Launch Root Actor(manager)</text>
+<line x1="485.0" y1="354" x2="785.0" y2="354" stroke="#2F7D4F" stroke-width="1.8" marker-end="url(#ah_green)"/>
+<text x="635.0" y="404" font-size="13" text-anchor="middle" fill="#1F2937">manager enqueuer</text>
+<line x1="785.0" y1="412" x2="485.0" y2="412" stroke="#6B7280" stroke-width="1.8" stroke-dasharray="6,5" marker-end="url(#oah_grey)"/>
+<text x="785.0" y="470" font-size="12.5" font-style="italic" text-anchor="start" fill="#6B7280">Actor Core begins (async)</text>
+<text x="785.0" y="513" font-size="13" text-anchor="middle" fill="#1F2937">ResolveConfig (baseline / file merge, §4.2)</text>
+<path d="M785.0,526 h26 v18 h-26" fill="none" stroke="#C0651A" stroke-width="1.8" marker-end="url(#ah_orange)"/>
+<text x="935.0" y="558" font-size="13" text-anchor="middle" fill="#1F2937">Launch Nested Actor(FileAppender) [if enableDefaultFile]</text>
+<line x1="785.0" y1="566" x2="1085.0" y2="566" stroke="#C0651A" stroke-width="1.8" marker-end="url(#ah_orange)"/>
+<text x="935.0" y="616" font-size="13" text-anchor="middle" fill="#1F2937">appender enqueuer + caller-actor-out</text>
+<line x1="1085.0" y1="624" x2="785.0" y2="624" stroke="#6B7280" stroke-width="1.8" stroke-dasharray="6,5" marker-end="url(#oah_grey)"/>
+<text x="785.0" y="693" font-size="13" text-anchor="middle" fill="#1F2937">append RegistryEntry{id, enqueuer}</text>
+<path d="M785.0,706 h26 v18 h-26" fill="none" stroke="#C0651A" stroke-width="1.8" marker-end="url(#ah_orange)"/>
+<text x="635.0" y="738" font-size="13" text-anchor="middle" fill="#1F2937">PostSnapshot: Send Notification{threshold, {id,enqueuer}[]}</text>
+<line x1="785.0" y1="746" x2="485.0" y2="746" stroke="#C0651A" stroke-width="1.8" marker-end="url(#ah_orange)"/>
+<text x="785.0" y="804" font-size="12.5" font-style="italic" text-anchor="middle" fill="#B03A2E">snapshot carries {id, enqueuer} entries (§2.1); posted</text>
+<text x="785.0" y="820" font-size="12.5" font-style="italic" text-anchor="middle" fill="#B03A2E">before the loop</text>
+<text x="785.0" y="863" font-size="13" text-anchor="middle" fill="#1F2937">Call Parent Method (enter message loop)</text>
+<path d="M785.0,876 h26 v18 h-26" fill="none" stroke="#C0651A" stroke-width="1.8" marker-end="url(#ah_orange)"/>
+<text x="485.0" y="935" font-size="13" text-anchor="middle" fill="#1F2937">WaitForSnapshot(AnySnapshot): readiness</text>
+<text x="485.0" y="951" font-size="13" text-anchor="middle" fill="#1F2937">barrier (§5.11)</text>
+<path d="M485.0,964 h26 v18 h-26" fill="none" stroke="#2B6CB0" stroke-width="1.8" marker-end="url(#ah_blue)"/>
+<text x="485.0" y="1004" font-size="12.5" font-style="italic" text-anchor="start" fill="#B03A2E">blocks until initial snapshot; manager dies on entry -&gt;</text>
+<text x="485.0" y="1020" font-size="12.5" font-style="italic" text-anchor="start" fill="#B03A2E">error 5030 (loud)</text>
+<text x="335.0" y="1044" font-size="13" text-anchor="middle" fill="#1F2937">return ready Logger (+ non-fatal config warning on error wire)</text>
+<line x1="485.0" y1="1052" x2="185.0" y2="1052" stroke="#6B7280" stroke-width="1.8" stroke-dasharray="6,5" marker-end="url(#oah_grey)"/>
+<rect x="90.0" y="64" width="190" height="56" rx="9" ry="9" fill="#E8EEF7" stroke="#2B5C8A" stroke-width="1.8"/>
+<text x="185.0" y="88" font-size="14" font-weight="bold" text-anchor="middle" fill="#1F2937">Application</text>
+<text x="185.0" y="106" font-size="11" text-anchor="middle" fill="#6B7280">caller</text>
+<rect x="390.0" y="64" width="190" height="56" rx="9" ry="9" fill="#DCE9F5" stroke="#2B6CB0" stroke-width="1.8"/>
+<text x="485.0" y="98" font-size="14" font-weight="bold" text-anchor="middle" fill="#1F2937">Logger.Initialize</text>
+<rect x="690.0" y="64" width="190" height="56" rx="9" ry="9" fill="#FBEBD7" stroke="#C0651A" stroke-width="1.8"/>
+<text x="785.0" y="88" font-size="14" font-weight="bold" text-anchor="middle" fill="#1F2937">LogManager</text>
+<text x="785.0" y="106" font-size="11" text-anchor="middle" fill="#6B7280">root actor</text>
+<rect x="990.0" y="64" width="190" height="56" rx="9" ry="9" fill="#E3EFE7" stroke="#2F7D4F" stroke-width="1.8"/>
+<text x="1085.0" y="88" font-size="14" font-weight="bold" text-anchor="middle" fill="#1F2937">FileAppender</text>
+<text x="1085.0" y="106" font-size="11" text-anchor="middle" fill="#6B7280">nested actor</text>
+</svg>

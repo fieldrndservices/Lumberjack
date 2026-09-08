@@ -4,6 +4,9 @@
 	<Property Name="NI.Lib.SourceVersion" Type="Int">637566976</Property>
 	<Property Name="NI.Lib.Version" Type="Str">1.0.0.0</Property>
 	<Property Name="NI.LV.All.SourceOnly" Type="Bool">true</Property>
+	<Item Name="Friends List" Type="Friends List">
+		<Item Name="Tests.lvlib" Type="Friended Library" URL="../../tests/Tests.lvlib"/>
+	</Item>
 	<Item Name="Core" Type="Folder">
 		<Item Name="Appenders" Type="Folder">
 			<Item Name="Appender.lvclass" Type="LVClass" URL="../Core/Appenders/Appender.lvclass/Appender.lvclass">
@@ -39,8 +42,11 @@
 		<Item Name="Messages" Type="Folder">
 			<Item Name="ConfigureAppenderMsg.lvclass" Type="LVClass" URL="../Core/Messages/ConfigureAppenderMsg.lvclass/ConfigureAppenderMsg.lvclass"/>
 			<Item Name="ConfigureMsg.lvclass" Type="LVClass" URL="../Core/Messages/ConfigureMsg.lvclass/ConfigureMsg.lvclass"/>
+			<Item Name="FlushAckMsg.lvclass" Type="LVClass" URL="../Core/Messages/FlushAckMsg.lvclass/FlushAckMsg.lvclass"/>
+			<Item Name="FlushAppenderMsg.lvclass" Type="LVClass" URL="../Core/Messages/FlushAppenderMsg.lvclass/FlushAppenderMsg.lvclass"/>
 			<Item Name="LogStatementMsg.lvclass" Type="LVClass" URL="../Core/Messages/LogStatementMsg.lvclass/LogStatementMsg.lvclass"/>
 			<Item Name="RegisterAppenderMsg.lvclass" Type="LVClass" URL="../Core/Messages/RegisterAppenderMsg.lvclass/RegisterAppenderMsg.lvclass"/>
+			<Item Name="RequestShutdownMsg.lvclass" Type="LVClass" URL="../Core/Messages/RequestShutdownMsg.lvclass/RequestShutdownMsg.lvclass"/>
 			<Item Name="SetGlobalThresholdMsg.lvclass" Type="LVClass" URL="../Core/Messages/SetGlobalThresholdMsg.lvclass/SetGlobalThresholdMsg.lvclass"/>
 			<Item Name="UnregisterAppenderMsg.lvclass" Type="LVClass" URL="../Core/Messages/UnregisterAppenderMsg.lvclass/UnregisterAppenderMsg.lvclass"/>
 		</Item>
@@ -49,6 +55,11 @@
 		<Item Name="Logger.lvclass" Type="LVClass" URL="../Public/Logger.lvclass/Logger.lvclass"/>
 	</Item>
 	<Item Name="Support" Type="Folder">
+		<Item Name="Backpressure" Type="Folder">
+			<Property Name="NI.LibItem.Scope" Type="Int">4</Property>
+			<Item Name="ApplyBackPressure.vi" Type="VI" URL="../Support/Backpressure/ApplyBackPressure.vi"/>
+			<Item Name="BuildDropNotice.vi" Type="VI" URL="../Support/Backpressure/BuildDropNotice.vi"/>
+		</Item>
 		<Item Name="Config" Type="Folder">
 			<Property Name="NI.LibItem.Scope" Type="Int">4</Property>
 			<Item Name="Mapping" Type="Folder">
@@ -93,8 +104,12 @@
 			<Property Name="NI.LibItem.Scope" Type="Int">4</Property>
 			<Item Name="RoutedFilterMatch.vi" Type="VI" URL="../Support/Filter/RoutedFilterMatch.vi"/>
 		</Item>
+		<Item Name="JSON" Type="Folder">
+			<Property Name="NI.LibItem.Scope" Type="Int">4</Property>
+			<Item Name="JSONEscapeString.vi" Type="VI" URL="../Support/JSON/JSONEscapeString.vi"/>
+		</Item>
 		<Item Name="Path" Type="Folder">
-			<Property Name="NI.LibItem.Scope" Type="Int">2</Property>
+			<Property Name="NI.LibItem.Scope" Type="Int">4</Property>
 			<Item Name="ResolveHostRoot.vi" Type="VI" URL="../Support/Path/ResolveHostRoot.vi"/>
 		</Item>
 		<Item Name="Severity" Type="Folder">
@@ -116,29 +131,41 @@
 			<Item Name="DefaultSourceTag.vi" Type="VI" URL="../Support/Tag/DefaultSourceTag.vi"/>
 			<Item Name="Sanitize.vi" Type="VI" URL="../Support/Tag/Sanitize.vi"/>
 		</Item>
+		<Item Name="Time" Type="Folder">
+			<Property Name="NI.LibItem.Scope" Type="Int">4</Property>
+			<Item Name="FormatTimeString.vi" Type="VI" URL="../Support/Time/FormatTimeString.vi"/>
+		</Item>
+		<Item Name="Verbosity" Type="Folder">
+			<Item Name="ShouldDisplay.vi" Type="VI" URL="../Support/Verbosity/ShouldDisplay.vi">
+				<Property Name="NI.LibItem.Scope" Type="Int">4</Property>
+			</Item>
+		</Item>
 	</Item>
 	<Item Name="TypeDefs" Type="Folder">
 		<Property Name="NI.LibItem.Scope" Type="Int">1</Property>
-		<Property Name="NI.SortType" Type="Int">3</Property>
+		<Property Name="NI.SortType" Type="Int">0</Property>
 		<Item Name="ConfigDTO" Type="Folder">
 			<Item Name="AppenderConfigDTO.ctl" Type="VI" URL="../TypeDefs/ConfigDTO/AppenderConfigDTO.ctl"/>
 			<Item Name="FileAppenderConfigDTO.ctl" Type="VI" URL="../TypeDefs/ConfigDTO/FileAppenderConfigDTO.ctl"/>
+			<Item Name="FileConfigDTO.ctl" Type="VI" URL="../TypeDefs/ConfigDTO/FileConfigDTO.ctl"/>
 			<Item Name="FilterDTO.ctl" Type="VI" URL="../TypeDefs/ConfigDTO/FilterDTO.ctl"/>
 			<Item Name="LumberjackConfigDTO.ctl" Type="VI" URL="../TypeDefs/ConfigDTO/LumberjackConfigDTO.ctl"/>
-			<Item Name="FileConfigDTO.ctl" Type="VI" URL="../TypeDefs/ConfigDTO/FileConfigDTO.ctl"/>
 		</Item>
-		<Item Name="Statement.ctl" Type="VI" URL="../TypeDefs/Statement.ctl"/>
+		<Item Name="AppenderConfig.ctl" Type="VI" URL="../TypeDefs/AppenderConfig.ctl"/>
 		<Item Name="DropPolicy.ctl" Type="VI" URL="../TypeDefs/DropPolicy.ctl"/>
+		<Item Name="FileAppenderConfig.ctl" Type="VI" URL="../TypeDefs/FileAppenderConfig.ctl"/>
+		<Item Name="FileConfig.ctl" Type="VI" URL="../TypeDefs/FileConfig.ctl"/>
 		<Item Name="Filter.ctl" Type="VI" URL="../TypeDefs/Filter.ctl"/>
 		<Item Name="FilterMode.ctl" Type="VI" URL="../TypeDefs/FilterMode.ctl"/>
+		<Item Name="HostAppKind.ctl" Type="VI" URL="../TypeDefs/HostAppKind.ctl"/>
+		<Item Name="LumberjackConfig.ctl" Type="VI" URL="../TypeDefs/LumberjackConfig.ctl"/>
+		<Item Name="ManagerLaunchInputs.ctl" Type="VI" URL="../TypeDefs/ManagerLaunchInputs.ctl"/>
+		<Item Name="RegistryEntry.ctl" Type="VI" URL="../TypeDefs/RegistryEntry.ctl"/>
+		<Item Name="RelayAppenderConfig.ctl" Type="VI" URL="../TypeDefs/RelayAppenderConfig.ctl"/>
 		<Item Name="RelayMode.ctl" Type="VI" URL="../TypeDefs/RelayMode.ctl"/>
 		<Item Name="Severity.ctl" Type="VI" URL="../TypeDefs/Severity.ctl"/>
-		<Item Name="AppenderConfig.ctl" Type="VI" URL="../TypeDefs/AppenderConfig.ctl"/>
-		<Item Name="FileAppenderConfig.ctl" Type="VI" URL="../TypeDefs/FileAppenderConfig.ctl"/>
-		<Item Name="RelayAppenderConfig.ctl" Type="VI" URL="../TypeDefs/RelayAppenderConfig.ctl"/>
-		<Item Name="LumberjackConfig.ctl" Type="VI" URL="../TypeDefs/LumberjackConfig.ctl"/>
 		<Item Name="Snapshot.ctl" Type="VI" URL="../TypeDefs/Snapshot.ctl"/>
-		<Item Name="FileConfig.ctl" Type="VI" URL="../TypeDefs/FileConfig.ctl"/>
-		<Item Name="RegistryEntry.ctl" Type="VI" URL="../TypeDefs/RegistryEntry.ctl"/>
+		<Item Name="SnapshotWaitMode.ctl" Type="VI" URL="../TypeDefs/SnapshotWaitMode.ctl"/>
+		<Item Name="Statement.ctl" Type="VI" URL="../TypeDefs/Statement.ctl"/>
 	</Item>
 </Library>

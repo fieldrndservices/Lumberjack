@@ -157,6 +157,17 @@ concretes exist, before the manager or facade.*
 
 ## Phase 8 - Surface and packaging
 
+- [ ] 28a. Extract the pure helpers into a `Support.lvlib` sub-library: `Enum`,
+      `File`, `Filter`, `Severity`, `Tag`, `Path`, and the layout
+      `FormatTimeString` (decide whether `Config` and `Store` join or stay in
+      Core). Give the library its own icon banner so member VIs inherit it.
+      Scope `Support.lvlib` private within `Lumberjack.lvlib` (off the public PPL
+      surface) and make `Tests.lvlib` a friend of `Support.lvlib` only, replacing
+      the current library-wide friend edge. Do the moves in the IDE so callers,
+      friend declarations, and the project relink; qualified names change
+      (`Lumberjack.lvlib:X` to `...Support.lvlib:X`), so regenerate the HTML
+      report afterward. Precedes the palette (29) and PPL packaging (32) because
+      it changes namespaces. (Structural refactor; no behavior change.)
 - [ ] 29. Curated palette `.mnu` files (Action-Status, Appenders, Configure,
       Data, Utility).
 - [ ] 30. `examples/`: Simple, Two Files, Routed by tag, Relay to UI actor.
@@ -209,6 +220,50 @@ concretes exist, before the manager or facade.*
       message; messages should name the offending value and list the valid
       members. Keep `Base+99` within the 5000-9999 user range for any chosen
       base.
+
+      Fault-raising mechanism (revised strategy): two layers over a configurable
+      base, so the format is identical everywhere and the block can be relocated.
+
+      - **One chokepoint helper** owns the *format*: it takes an offset, a context
+        string, and a level (Error/Warning), reads `LumberjackErrorBase` from the
+        Store (falling back to 5000 when unset), computes `code = Base + offset`,
+        builds `source` as `Lumberjack: <message>` with `<<context>>` substituted,
+        sets `status` by level (Error = TRUE, Warning = FALSE), and merges with
+        `error in`. Sole owner of the prefix, the `<<context>>` substitution, and
+        the base.
+      - **One VI per code** owns the *content*: named by meaning (not the number),
+        it hard-codes its offset, level, and message template and calls the helper.
+        Call sites raise a fault by calling its code VI, base-agnostic (offset
+        only), so a base relocation changes nothing at the call sites or code VIs.
+        One VI still raises one code; a caller that needs several (e.g. a validator
+        raising 5022/5024/5025) calls several code VIs.
+      - **Configurable global offset:** `LumberjackErrorBase` is a host input applied
+        at `Initialize` and stored in the Store as the *first* step (before any
+        fault-generating step), then read by the helper at runtime, relocating the
+        block is a launch input, no recompile. The 5000 fallback covers early faults
+        and the pure-VI unit tests that never launch the manager.
+
+      Development sub-checklist:
+
+      - [ ] 33a. Chokepoint helper (offset + context + level + `error in` ->
+            `error out`; Base from Store with 5000 fallback; `Lumberjack:` prefix;
+            `<<context>>` substitution; status by level).
+      - [ ] 33b. Store `LumberjackErrorBase` at the top of `Initialize` (host input,
+            default 5000).
+      - [ ] 33c. One VI per code, each with its offset/level/message, calling the
+            helper. **Message content for each code is in `docs/Error-Codes.md` §5,
+            review it there.**
+      - [ ] 33d. Route every existing raise site through its code VI and remove the
+            hand-built error constants (this is the Error-Codes §6 sweep): 5000,
+            5010-5012, 5014, 5020-5026, 5027-5029, 5030, 5032.
+      - [ ] 33e. Generate/sync `errors/Lumberjack-errors.txt` from the code VIs so
+            General Error Handler shows the static description.
+      - [ ] 33f. Tests: existing fault-code asserts assume the default base (5000);
+            add a base-relocation test (set base 6000 -> a fault returns
+            `6000 + offset`).
+
+      Offsets and raise sites are the reconciled `docs/Error-Codes.md` registry;
+      message content is §5; the routing sweep is §6.
 
 ---
 

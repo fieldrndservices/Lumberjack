@@ -61,9 +61,15 @@ Lumberjack separates a low-frequency **control plane** from a high-frequency
 - **Data plane (caller-side fan-out via a shared reference):** the log-write hot
   path. A caller holds a lightweight `Logger` facade backed by a Notifier. The
   Notifier carries a read-only snapshot: the global threshold and the current
-  array of appender enqueuers. A log call reads the current snapshot, applies
+  set of appenders in an `appenders` array. Each entry is a `RegistryEntry`
+  (`{id, enqueuer}`), the same type the manager keys its registry on, so an
+  appender's identity travels with its enqueuer rather than in a parallel array. A log call reads the current snapshot, applies
   the coarse global threshold locally (SRS-LMBR-012), and enqueues the statement
-  directly to each appender. The root is not in this path.
+  directly to each appender's enqueuer. The root is not in this path.
+
+The ids in the snapshot are not used on the hot path (fan-out reads `.enqueuer`);
+they exist so the control plane can key confirmation barriers on the presence or
+absence of a specific appender (5.11), which is more robust than counting.
 
 The `LogManager` is the sole poster of the Notifier snapshot. It sends an
 updated snapshot when the global threshold changes or the appender set changes.
@@ -102,7 +108,8 @@ lifecycle is tied to it: stopping the manager stops and flushes every appender
 A single log call performs:
 
 1. Read the current Notifier snapshot (`Get Notifier Status`, non-destructive),
-   obtaining the global threshold and the appender enqueuer array.
+   obtaining the global threshold and the appender set (each entry a
+   `{id, enqueuer}` pair; the hot path uses `.enqueuer`).
 2. If the statement's severity rank exceeds the global threshold, return
    immediately; nothing is enqueued (SRS-LMBR-012 stage 1).
 3. Otherwise, build the `Statement` and enqueue a `LogStatementMsg` to each
@@ -236,8 +243,8 @@ Control plane (caller/`Logger` -> `LogManager` enqueuer):
 
 | Message | Payload | Do.vi action |
 |---|---|---|
-| RegisterAppenderMsg | a constructed, pre-configured `Appender` object | Launch it as a nested actor, add its enqueuer to the registry, post an updated Notifier snapshot. |
-| UnregisterAppenderMsg | appender ID | Post an updated snapshot without that enqueuer, then send framework Stop to the appender and remove it from the registry. |
+| RegisterAppenderMsg | a constructed, pre-configured `Appender` object | Launch it as a nested actor, add its `{id, enqueuer}` entry to the registry, post an updated Notifier snapshot (caller may block until the id appears, 5.11). |
+| UnregisterAppenderMsg | appender ID | Remove the entry from the registry and post a snapshot without that id first, then send framework Stop to the appender (caller may block until the id is absent, 5.11). |
 | SetGlobalThresholdMsg | threshold | Post an updated snapshot with the new threshold. |
 | ConfigureAppenderMsg | appender ID + config delta | Forward as a per-appender configure message to the target appender. |
 
@@ -292,7 +299,13 @@ per-key merge falls out of the primitive itself:
    baseName/extension filename-safe, filter criteria well-formed). Native
    parsing reports only generic structural errors, so field-level validation
    lives here
-   and names the offending setting (SRS-LMBR-048).
+   and names the offending setting (SRS-LMBR-048). Validation of the
+   default-file-appender sub-config is **gated on `enableDefaultFile`**: when the
+   default file is disabled, that sub-config is neither resolved nor validated,
+   so a placeholder/empty default block (for example an empty `id`) does not fail
+   launch for an appender that will never be constructed. The gate lives at the
+   top of the validator stack (`ValidateLumberjackConfigDTO`), not deep in the
+   chain, so the disabled branch is never entered.
 4. Map the validated DTO to the native `LumberjackConfig`: names to enums
    (`SeverityFromString`, `DropPolicyFromString`, `FilterModeFromString`), path
    strings via `String To Path`. Downstream code sees only native types.
@@ -355,7 +368,9 @@ understand.
 ### 4.3 Launch sequence
 
 1. `Launch Root Actor` starts the `LogManager` and returns its enqueuer,
-   wrapped in a `Logger` facade along with a freshly created Notifier.
+   wrapped in a `Logger` facade along with two freshly created Notifiers: the
+   `snapshotNotifier` (data plane / barriers) and the `stoppedNotifier`
+   (shutdown barrier, 5.11).
 2. The `LogManager` resolves effective configuration (4.2).
 3. It constructs the default `FileAppender` object, sets its configuration
    through the init chain (4.4), and launches it as a nested actor, obtaining
@@ -364,8 +379,13 @@ understand.
 4. It posts the initial Notifier snapshot: the global threshold and the enqueuer
    array (initially the default file appender only). Posting before launch
    returns guarantees `Get Notifier Status` always has a value for callers.
-5. Launch returns the `Logger` to the caller. Any non-fatal warning from 4.2
-   rides out on the error wire.
+5. Before returning, `Initialize` blocks on a readiness barrier
+   (`WaitForSnapshot`, `AnySnapshot` mode, 5.11): it does not hand back the
+   `Logger` until the manager has posted its initial snapshot. This guarantees
+   the returned logger is ready to log with no dropped first message, and turns a
+   manager that dies during entry (so it never posts) into a loud failure (error
+   5030) instead of a valid-looking handle to a dead actor. Any non-fatal warning
+   from 4.2 rides out on the error wire.
 
 Additional appenders are added afterward by the application constructing and
 configuring an appender object and sending `RegisterAppenderMsg`
@@ -373,11 +393,11 @@ configuring an appender object and sending `RegisterAppenderMsg`
 
 ![Figure 7. Initialization / launch sequence. The notifier is created and stamped into the manager before Launch Root Actor, so the running actor carries it. Launch Nested Actor returns the caller-actor-out (the manager with the child recorded), which must be threaded forward for nested teardown to work. The initial snapshot is posted before the message loop starts so callers always read a value.](diagrams/launch.png){ width=6.4in }
 
-Three ordering constraints in this sequence are load-bearing. First, the
-Notifier is obtained and written into the manager's private data (through
-`SetLaunchInputs`) *before* `Launch Root Actor`; a running actor carries the
-copy of its data taken at launch, so a notifier set afterward never reaches the
-running instance. Second, `Launch Nested Actor` returns an updated
+Three ordering constraints in this sequence are load-bearing. First, both
+Notifiers are obtained and written into the manager's private data (through
+`SetLaunchInputs`, bundled in `ManagerLaunchInputs`) *before* `Launch Root
+Actor`; a running actor carries the copy of its data taken at launch, so a
+notifier set afterward never reaches the running instance. Second, `Launch Nested Actor` returns an updated
 launching-actor terminal (the manager with the new child recorded); that value
 must be threaded onward, or the manager will not stop the child at shutdown.
 Third, the initial snapshot is posted before `Call Parent Method` enters the
@@ -402,6 +422,61 @@ chain (SRS-LMBR-031):
 The root never parses or holds a concrete appender's type-specific fields; it
 only moves the constructed object. Adding a new appender type is a new subclass
 with no manager changes.
+
+### 4.5 ConfigReader (component design)
+
+`ConfigReader` is the component that runs the 4.2 pipeline: it turns the
+programmatic baseline plus an optional JSON file into a validated native
+`LumberjackConfig`, once, at launch (SRS-LMBR-051). It is the seam between the
+string/DTO file world and the native config the manager consumes, nothing
+downstream sees JSON or a DTO. It lives in `src/Support/Config` (+
+`Config/Mapping`), protected with the test library as friend, off the public PPL
+surface (8), and executes inside the manager's resolve step (4.3, step 2). There
+is no runtime re-read.
+
+**Entry point and interface.** `Resolve.vi` is the orchestrator. Inputs: the
+baseline (`GlobalThreshold`, the default `FileAppenderConfig`, `enableDefaultFile`),
+the optional `ConfigFilePath`, and `HostApplicationPath`. Output: `ResolvedConfig`
+(native `LumberjackConfig`) plus the standard error cluster, which carries a
+non-fatal warning on the missing-file path and a fatal error on a parse or
+validation failure.
+
+**Constituent steps and the VIs that own them** (each realizing a step of 4.2):
+
+1. Build the baseline DTO from defaults overlaid with the launch inputs
+   (enum-to-name via `SeverityString` and siblings; paths rendered as strings).
+2. `CheckSchemaVersion` rejects a file whose `schemaVersion` is not in the accepted
+   set (error 5021) before any field is trusted.
+3. Merge: pass the file text to `Unflatten From JSON` with the baseline DTO as the
+   default-value input, so keys present in the file override and absent keys retain
+   the baseline (per-key merge, SRS-LMBR-046). A missing file skips the merge and
+   returns the baseline with a non-fatal warning naming the path (SRS-LMBR-047);
+   unparseable text fails launch (SRS-LMBR-048).
+4. Validate the merged DTO field-by-field (`ValidateLumberjackConfigDTO` and the
+   file/appender/filter validators): unknown enum names, out-of-range thresholds,
+   a bound not `-1`-or-positive (5022), filter band order (5023), empty id (5024),
+   structural type (5025), each naming the offending setting. The default-file
+   sub-config validation is gated on `enableDefaultFile` at the top of the stack.
+5. Map the validated DTO to native (`LumberjackConfigFromDTO` and siblings:
+   name-to-enum, `String To Path`).
+6. `ResolveHostRoot` supplies the base root when `rootFolder` is empty (6); a
+   resource named by a valid config is not proven here, its failure surfaces at the
+   appender's own launch (SRS-LMBR-049).
+
+**Build status (this PR is design only).** The read/validate/map VIs and
+`Config - resolve.vi` exist and cover the no-file, missing, and invalid paths
+(LMBR-T-020/022/023). The **per-key merge is not yet fully realized**: the current
+`Merge.vi` is an interim full-object overwrite, an empty or absent value clobbers
+the baseline rather than falling back, so SRS-LMBR-046's partial-file semantics are
+incomplete. The robust realization (the baseline-as-default `Unflatten` above, or a
+presence-mask two-default diff if the primitive cannot distinguish an absent key
+from one supplied at the default value) and its `LMBR-T-021` per-key-merge test are
+deferred to the ConfigReader implementation (Build-Checklist F1-F4), post-1.0.
+
+**Out of scope here.** Bounded-queue backpressure and `DropPolicy` live integration
+(the appender-owned intake buffer and drain) is tracked as a separate future PR, not
+part of ConfigReader; the decision primitives (`ApplyBackPressure`,
+`BuildDropNotice`) are already built and unit-tested.
 
 ---
 
@@ -507,9 +582,16 @@ constructing its `CSVLayout` with that delimiter.
   itself an actor whose inbound queue obeys the same backpressure policy as any
   appender (5.7).
 - **Queue mode (compatibility, SRS-LMBR-025):** accepted statements are enqueued
-  onto an owned LabVIEW queue whose reference is exposed for the application to
-  Dequeue or Flush. This mode is poll-based and serves non-actor consumers; the
-  consumer controls drain timing.
+  onto a **named** LabVIEW queue whose name is derived from the appender id
+  (`RelayQueueName`, `"Lumberjack.Relay." + id`). The **application owns the
+  queue's lifecycle**; the appender obtains the same named queue at `OpenSink`
+  and only shares it, so `CloseSink` releases the appender's reference but does
+  not destroy the queue. This is what lets the application keep draining after
+  the appender is unregistered, and it makes the application responsible for
+  force-destroying the queue when done (see 5.10). The named queue also means the
+  refnum need not be threaded across the launch boundary: both parties obtain it
+  by name. This mode is poll-based and serves non-actor consumers; the consumer
+  controls drain timing.
 
 Because the relay is an appender, its threshold and filter apply, so a consumer
 can tap only a subset (for example, ERROR and above) (SRS-LMBR-023).
@@ -524,12 +606,53 @@ can tap only a subset (for example, ERROR and above) (SRS-LMBR-023).
 - **Drop-oldest default (SRS-LMBR-057):** when a bounded queue is full, the
   oldest queued statement is discarded to admit the newest. Drop-newest and
   level-aware drop (never discard ERROR/FATAL) are selectable per appender.
+  - **Drop-newest** discards the *incoming* statement (the newest), leaving the
+    queue unchanged.
+  - **Level-aware** sheds the least-severe *non-protected* statement (protected =
+    FATAL/ERROR) from the queue-plus-incoming set. Tie-break and edge cases (draft,
+    beyond SRS-057, to fold back into the SRS): the **incoming loses ties** (a
+    statement that merely equals the current least-severe is not worth churning the
+    buffer for, so the newest such arrival is dropped and the queue is left
+    untouched); among equally-least-severe *queued* statements the **oldest** is
+    dropped; and when the set is **all FATAL/ERROR** (nothing sheddable) the
+    **incoming** is dropped (never discard an already-queued critical record;
+    preserve the bound rather than exceed it).
+  - The decision is factored into a pure helper `ApplyBackPressure` (`pending`,
+    `incoming`, `queueBound`, `dropPolicy`, `worstSeverityIn` -> `result`,
+    `dropped?`, `droppedStatement`, `worstSeverityOut`); `Actor Core`'s intake
+    calls it, stores `result`, carries `worstSeverityOut` back as the next
+    `worstSeverityIn`, and bumps the dropped counter. It stays a pure function of
+    its inputs (deterministic, unit-testable, LMBR-T-047/048/049); the buffer state
+    lives in the caller, not the VI.
+  - **Memoized-floor fast-path (optimization).** `worstSeverityIn` (a `Severity`)
+    is the least-severe statement currently queued (the buffer "floor"), maintained
+    across calls. Because the least-severe-possible item is always a safe eviction,
+    when the queue is full and `incoming` is at or below that floor
+    (`incoming.Severity >= worstSeverityIn`, comparing enum ordinals, which equal
+    rank), the incoming is dropped immediately, with no scan and no O(N) array
+    delete, and the buffer is unchanged. Only a more-severe arrival triggers the
+    scan for the oldest least-severe queued victim. The floor is a **hint**: an
+    empty/unknown value (sentinel `OFF`) forces the scan, which is always correct
+    and recomputes the floor, so correctness never depends on the hint, only the
+    speedup does. This turns the dominant backpressure workload (a flood of
+    low-priority statements into a full buffer) into O(1). An oracle test
+    (LMBR-T-049 equivalence) asserts the fast-path picks the same victim as the
+    brute-force scan. These comparisons ride on the `Severity` enum staying ordered
+    by severity (OFF..ALL); that ordering is already the enum's single source of
+    truth.
 - **No blocking (SRS-LMBR-058):** the enqueue path never blocks the caller; on a
   full bounded queue the drop policy acts immediately. This is what preserves
   SRS-LMBR-052 under saturation.
 - **Loss observability (SRS-LMBR-059):** each appender keeps a dropped-statement
-  counter and periodically emits a synthetic "N statements dropped" record into
-  its own output so gaps are visible.
+  counter and periodically emits a synthetic drop-notice record into its own output
+  so gaps are visible. The notice is built by a pure helper `BuildDropNotice`
+  (`droppedCount` -> `Statement`): `message = "dropped statement count = <N>"`
+  (key=value form, no singular/plural cases), `level = ERROR`, `sourceTag =
+  "lumberjack.dropped"` (the `lumberjack.*` namespace is reserved for Lumberjack's
+  own system messages). Two properties keep the notice from being lost itself:
+  `ERROR` is protected so level-aware never sheds it, and `Actor Core` emits it
+  **straight to the sink, bypassing the drop policy** (not back through
+  `ApplyBackPressure`), so drop-oldest/drop-newest can't discard it either.
 
 Implementation note: the drop-oldest and bound are enforced inside the appender
 as it manages intake, not by blocking the framework enqueue, so the caller-side
@@ -539,18 +662,24 @@ enqueue always completes.
 
 - **Register (SRS-LMBR-020, 028):** the application constructs and configures an
   appender, then sends `RegisterAppenderMsg`. The manager launches it, adds
-  its enqueuer to the registry, and posts an updated Notifier snapshot. Callers
-  pick up the new appender on their next snapshot read.
+  its `{id, enqueuer}` entry to the registry, and posts an updated Notifier
+  snapshot. `Logger.RegisterAppender` then blocks on a registration barrier
+  (`WaitForSnapshot`, `IDPresent` mode, 5.11) until that appender's id appears in
+  a snapshot, so on return the appender is live and the next `Log` reaches it.
 - **Unregister (SRS-LMBR-020):** `UnregisterAppenderMsg` with an ID causes the
-  manager to remove the enqueuer from the snapshot first (so callers stop
-  targeting it), then send the framework Stop to that appender, which flushes
-  and closes before stopping.
+  manager to remove the entry from the registry and post a snapshot without that
+  id first (so callers stop targeting it), then send the framework Stop to that
+  appender, which flushes and closes before stopping. `Logger.UnregisterAppender`
+  blocks on an unregistration barrier (`WaitForSnapshot`, `IDAbsent` mode, 5.11)
+  until the id is gone. Unregistering an id that was never registered is a benign
+  no-op: `IDAbsent` is already satisfied, so the call returns immediately without
+  error.
 
 A statement enqueued to an appender in the brief window before its removal is
 simply processed normally; a statement whose target has already stopped fails
 its enqueue harmlessly and does not affect other appenders (SRS-LMBR-021).
 
-![Figure 5. Registering and unregistering an appender at runtime. On unregister the snapshot is posted without the enqueuer before the appender is stopped.](diagrams/register.png){ width=6.3in }
+![Figure 5. Registering and unregistering an appender at runtime. On unregister the snapshot is posted without that appender's entry before the appender is stopped; callers may block on the id's presence/absence (5.11).](diagrams/register.png){ width=6.3in }
 
 ### 5.9 Configuration changes vs in-flight statements (SRS-deferred detail resolved)
 
@@ -576,9 +705,81 @@ each nested appender. Each appender, on stop, drains and writes any queued
 statements, then closes its sink (SRS-LMBR-002). Shutdown completes its
 flush-and-close even if a prior error is present on the wire (SRS-LMBR-004).
 
----
+`Shutdown` is **synchronous**: it blocks on a stopped barrier (5.11) until the
+manager confirms the whole actor tree has stopped, then returns. The manager
+fires a single `stoppedNotifier` (an error-cluster notification) from its
+`Actor Core` exit path, which AF only reaches after every nested appender has
+run its `CloseSink`; the notification's payload carries the actor's exit error
+so a teardown fault propagates back through `Shutdown`. If the tree does not stop
+within a bounded timeout, `Shutdown` raises error 5032. This barrier is what
+makes it safe to sequence application-side cleanup after `Shutdown` returns, in
+particular, force-destroying any application-owned relay queues (5.6): the
+queues are released only after their writers (the relay appenders) are confirmed
+stopped, so no appender can `Write` into a destroyed queue.
 
 ![Figure 6. Shutdown: the Log Manager stops each nested appender, which drains its queue and closes its sink before confirming.](diagrams/shutdown.png){ width=6.0in }
+
+### 5.11 Synchronous confirmation barriers
+
+Control-plane operations are asynchronous: registering, unregistering, and
+stopping appenders are messages to the root actor, and the initial readiness
+state is reached inside the manager's own startup. Callers and the test harness,
+however, frequently need to know when an operation's effect is *observable*
+before proceeding, that a newly registered appender will receive the next
+statement, that an unregistered one will not, that the actor tree is fully
+stopped before its resources are reclaimed. Fixed sleeps are nondeterministic
+and flaky under load or highlight-execution; the design uses two Notifier-based
+barriers instead, each bounded by a timeout so a stall is a loud error rather
+than a silent hang.
+
+**Snapshot barrier (`WaitForSnapshot`).** The manager already publishes a
+snapshot on every control-plane change (2.1). `WaitForSnapshot` blocks on the
+`snapshotNotifier` until a predicate over the snapshot holds, or a bounded
+deadline expires (error 5030). The deadline is computed once
+(`deadline = start + timeout`) and each wait consumes the remaining time, so the
+total is bounded regardless of how many snapshots arrive. Three predicate modes
+cover the callers:
+
+- `AnySnapshot` — met on the first snapshot received. Used by `Initialize` for
+  readiness (4.3).
+- `IDPresent` — met when a given appender id appears in the snapshot. Used by
+  `RegisterAppender` (5.8).
+- `IDAbsent` — met when a given id is not present. Used by `UnregisterAppender`
+  (5.8); also satisfied immediately for an id that was never registered, which is
+  what makes an unknown-id unregister a benign no-op.
+
+Because each snapshot entry carries the appender id (2.1), presence or absence of
+a *specific* appender is the signal, not a count. This is robust to ordering and
+concurrency (two registrations can't be mistaken for one) and removes the need to
+read a pre-count before sending; a count-based barrier could not tell which
+appender changed, nor distinguish an unknown-id unregister from a real one.
+
+**Stopped barrier (`stoppedNotifier`).** Shutdown needs a different signal, "the
+whole actor tree has stopped", which no snapshot expresses. The manager fires a
+single error-cluster notification from its `Actor Core` exit path, a point AF
+reaches only after all auto-stop nested appenders have stopped (their `CloseSink`
+complete). `Logger.Shutdown` blocks on it with a bounded timeout (error 5032) and
+merges the payload's exit error into its own error out. A single
+`Wait on Notification` suffices because the notifier fires exactly once; unlike
+the snapshot barrier there is no predicate to re-evaluate.
+
+**Determinism payoff.** Together these make each lifecycle transition observable
+on return: `Initialize` yields a ready logger, `RegisterAppender` a live
+appender, `UnregisterAppender` a silenced one, and `Shutdown` a fully-stopped
+tree, with no sleeps anywhere. This is what lets the integration tests assert
+delivery deterministically (Test-Strategy) and what lets teardown safely reclaim
+application-owned relay queues after `Shutdown` (5.6, 5.10). A barrier that times
+out is a defined failure (5030 for a snapshot condition, 5032 for a stuck stop;
+5031 reserved for finer-grained register failure), never a silent stall.
+
+Both notifiers are unnamed and shared by hand-off through the manager's launch
+inputs; they are reference-counted and released at `Shutdown`, so nothing
+persists in the process-global namespace (contrast the deliberately named relay
+queues, 5.6).
+
+![Figure 8. Synchronous confirmation barriers: the snapshot barrier (WaitForSnapshot, AnySnapshot / IDPresent / IDAbsent) and the stopped barrier (stoppedNotifier), with their timeout error codes.](diagrams/barriers.png){ width=6.3in }
+
+---
 
 ## 6. Path Resolution under a Packed Project Library
 
@@ -604,6 +805,14 @@ inputs (SRS-LMBR-039, 044); a relative or empty root is resolved against this
 host root. `ResolveHostRoot` is the only VI permitted to compute an external
 base path, and it never calls `Current VI's Path`.
 
+For testability, `ResolveHostRoot` exposes an injectable `app kind` input
+(typedef enum `HostAppKind` {`Auto`, `DevelopmentSystem`, `RunTimeSystem`},
+default `Auto`). `Auto` reads the real `Application.Kind`, so production callers
+are unaffected; a unit test wires `RunTimeSystem` to force the built-app branch
+and confirm the 5000 fault from the IDE (LMBR-T-058). This overrides only
+environment detection, not any path input, so SRS-LMBR-064 (external-path
+computation isolated in one VI) still holds. (Draft.)
+
 ---
 
 ## 7. Threading and Determinism
@@ -617,6 +826,12 @@ base path, and it never calls `Current VI's Path`.
   actual timing, not on Lumberjack delivery.
 - Within one appender's queue, order is preserved (SRS-LMBR-054). Cross-appender
   order is not guaranteed once queues drain concurrently.
+- Control-plane *lifecycle* transitions, unlike data-plane delivery, are made
+  deterministic by the synchronous confirmation barriers (5.11): startup,
+  register, unregister, and shutdown each block until their effect is observable,
+  so callers and tests never rely on sleeps. This determinism is about
+  observability of state changes, not about delivery latency, which remains
+  non-deterministic per the points above.
 
 ---
 
@@ -755,6 +970,17 @@ LabVIEW 2014 or newer (SRS-LMBR-060, 061, 062).
   merge logic.
 - **Relay as an appender:** the read/tap mechanism inherits filtering and
   backpressure for free (SRS-LMBR-023).
+- **Ids in the snapshot, and synchronous barriers over sleeps:** the snapshot
+  carries `{id, enqueuer}` entries so lifecycle barriers key on a specific
+  appender's presence/absence rather than a fragile count, and startup/register/
+  unregister/shutdown each block on a bounded Notifier barrier (5.11). The cost
+  is a small typedef change and two extra notifiers; the benefit is deterministic,
+  sleep-free lifecycle transitions and loud (not silent) failure on a stall.
+- **Named relay queues owned by the application:** queue-mode relay queues are
+  named from the appender id and owned by the application, so a consumer keeps
+  draining across unregister and teardown reclaims the queue only after a
+  confirmed stop. Notifiers, by contrast, are unnamed and hand-off-shared, so
+  they leave no namespace residue.
 
 ---
 
@@ -795,6 +1021,7 @@ LabVIEW 2014 or newer (SRS-LMBR-060, 061, 062).
 | Register/unregister | 5.8 | 020, 021, 028 |
 | Config vs in-flight | 5.9 | 043 |
 | Shutdown | 5.10 | 002, 004 |
+| Synchronous confirmation barriers | 5.11 | 002, 004, 020, 028 |
 | PPL path resolution | 6 | 063, 064 |
 | Threading / determinism | 7 | 022, 053, 054 |
 | Project structure, scope, palette | 8 | 060, 063 |

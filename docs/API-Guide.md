@@ -100,6 +100,9 @@ and returns an instance.
     Required when running as a built application (see below).
 - **Outputs:**
   - `logger out`: the `Logger` instance (also stored as the process default).
+    Ready to log on return, `Initialize` blocks until the manager has posted its
+    initial Snapshot, so the first `Log` is never dropped; a manager that fails to
+    start surfaces as **error 5030** rather than a dead-but-valid-looking logger.
   - `error out`: carries a non-fatal **warning** if a supplied config file path
     was missing (SRS-LMBR-047); a fatal **error** if the file was present but
     invalid (SRS-LMBR-048); or a fatal **error 5000** if a relative or empty log
@@ -110,9 +113,13 @@ and returns an instance.
 
 Stops the LogManager, which flushes and closes every appender.
 
-- **Inputs:** `logger in` *(opt)*.
+- **Inputs:** `logger in` *(opt)*, `timeout ms` *(opt, defaults to a shutdown
+  constant)*.
 - **Behavior:** runs its flush-and-close even if `error in` carries an error
-  (SRS-LMBR-004).
+  (SRS-LMBR-004). **Synchronous:** it does not return until the whole actor tree
+  has stopped (every appender through its flush/close), so on return it is safe to
+  reclaim application-owned resources such as relay queues. If the tree does not
+  stop within `timeout ms`, `error out` carries **error 5032**.
 
 ---
 
@@ -245,9 +252,12 @@ configuration with the appender type.
 
 - `RegisterAppender`: inputs `appender in`, `logger in` *(opt)*. Launches the
   appender as a nested actor, adds it to the broadcast, posts the updated
-  snapshot. Callers pick it up on their next log call (SRS-LMBR-020, 028).
+  snapshot. **Synchronous:** returns only once the appender is in a posted
+  snapshot, so the very next `Log` reaches it (SRS-LMBR-020, 028).
 - `UnregisterAppender`: inputs `id`, `logger in` *(opt)*. Removes it from the
-  snapshot first, then stops it (it flushes and closes on stop).
+  snapshot first, then stops it (it flushes and closes on stop). **Synchronous:**
+  returns only once the id is gone from the snapshot. Unregistering an id that was
+  never registered is a harmless no-op that returns immediately.
 
 ### 7.5 Reconfigure at runtime
 
