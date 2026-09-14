@@ -157,6 +157,7 @@
 		<Item Name="FileConfig.ctl" Type="VI" URL="../TypeDefs/FileConfig.ctl"/>
 		<Item Name="Filter.ctl" Type="VI" URL="../TypeDefs/Filter.ctl"/>
 		<Item Name="FilterMode.ctl" Type="VI" URL="../TypeDefs/FilterMode.ctl"/>
+		<Item Name="HostAppKind.ctl" Type="VI" URL="../TypeDefs/HostAppKind.ctl"/>
 		<Item Name="LumberjackConfig.ctl" Type="VI" URL="../TypeDefs/LumberjackConfig.ctl"/>
 		<Item Name="ManagerLaunchInputs.ctl" Type="VI" URL="../TypeDefs/ManagerLaunchInputs.ctl"/>
 		<Item Name="RegistryEntry.ctl" Type="VI" URL="../TypeDefs/RegistryEntry.ctl"/>
